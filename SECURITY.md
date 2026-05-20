@@ -13,7 +13,7 @@ The latest published version of `bobman-mcp` on npm is the only supported versio
 
 Please do **not** open public GitHub issues for security reports.
 
-Instead, send an email to `security@bobman-mcp.local` (or open a private security advisory on the GitHub repository under "Security → Advisories → Report a vulnerability"). Include:
+Instead, open a **private security advisory** on [github.com/Purnavu-12/bobman-mcp](https://github.com/Purnavu-12/bobman-mcp) under **Security → Advisories → Report a vulnerability**. Include:
 
 1. A short description of the vulnerability
 2. Reproduction steps (smallest possible reproduction is best)

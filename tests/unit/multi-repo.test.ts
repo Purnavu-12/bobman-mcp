@@ -8,6 +8,7 @@ import { close, open, type BobmanDatabase } from "../../src/state/db.js";
 import { addSessionRepo, listSessionRepos } from "../../src/state/repos.js";
 import { createSession, updateSessionState } from "../../src/state/session.js";
 import { handleAddSessionRepo } from "../../src/tools/add-session-repo.js";
+import { handleSeedTaskGraph } from "../../src/tools/seed-task-graph.js";
 
 function mkrepo(parent: string, name: string, files: Record<string, string> = {}): string {
   const repo = fs.mkdtempSync(path.join(parent, name));
@@ -48,15 +49,16 @@ describe("multi-repo support", () => {
     expect(parseLabelledPath("README.md")).toEqual({ rel: "README.md" });
   });
 
-  it("resolves bare path against the first repo by position", () => {
+  it("reports ambiguous bare path when multiple repos contain it", () => {
     const apiRepo = mkrepo(tmp, "api-", { "README.md": "api" });
     const webRepo = mkrepo(tmp, "web-", { "README.md": "web" });
     const s = createSession(db, "test", apiRepo);
     addSessionRepo(db, s.session_id, webRepo, "web");
     const repos = listSessionRepos(db, s.session_id);
     const r = resolveAgainstRepos(repos, "README.md");
-    expect(r.exists).toBe(true);
-    expect(r.repo_label).toBe("primary");
+    expect(r.exists).toBe(false);
+    expect(r.error).toBe("ambiguous_path");
+    expect(r.matching_repos).toEqual(expect.arrayContaining(["primary", "web"]));
   });
 
   it("resolves label::path against the named repo", () => {
@@ -112,6 +114,22 @@ describe("multi-repo support", () => {
     expect(res.repo.label).toBe("web");
     expect(res.repo.position).toBe(1);
     expect(res.repos).toHaveLength(2);
+  });
+
+  it("seed_task_graph strict mode rejects ambiguous file_scope", () => {
+    const apiRepo = mkrepo(tmp, "api-", { "shared.ts": "a" });
+    const webRepo = mkrepo(tmp, "web-", { "shared.ts": "b" });
+    const s = createSession(db, "test", apiRepo);
+    addSessionRepo(db, s.session_id, webRepo, "web");
+    expect(() =>
+      handleSeedTaskGraph(
+        { db, strictFileScope: true },
+        {
+          session_id: s.session_id,
+          tasks: [{ task_id: "t1", instruction: "x", acceptance_criteria: "y", file_scope: ["shared.ts"] }],
+        },
+      ),
+    ).toThrow(BobmanError);
   });
 
   it("add_session_repo rejects non-directory paths", () => {

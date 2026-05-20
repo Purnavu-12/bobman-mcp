@@ -13,6 +13,10 @@
     "dist",
     "scripts",
     "docs/install-windows.md",
+    "docs/production.md",
+    "docs/mcp-hosts.md",
+    "docs/http-transport.md",
+    "AGENTS.md",
     "README.md",
     "LICENSE",
     "SECURITY.md",
@@ -45,6 +49,14 @@
     "provenance": true
   },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Purnavu-12/bobman-mcp.git"
+  },
+  "homepage": "https://github.com/Purnavu-12/bobman-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/Purnavu-12/bobman-mcp/issues"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
     "@octokit/rest": "^22.0.1",

@@ -9,6 +9,8 @@ export interface ResolvedPath {
   exists: boolean;
   kind: FileScopeKind;
   error?: string;
+  repo_label?: string;
+  matching_repos?: string[];
 }
 
 export function resolvePathAgainstRepo(repoPath: string, candidate: string): ResolvedPath {
@@ -115,27 +117,51 @@ export function resolveAgainstRepos(
     const r = resolvePathAgainstRepo(repo.abs_path, parsed.rel);
     return { ...r, path: candidate, repo_label: repo.label };
   }
-  let firstNonExisting: (ResolvedPath & { repo_label?: string }) | null = null;
+  const existingMatches: { label: string; resolved: ResolvedPath }[] = [];
+  let firstNonExisting: ResolvedPath | null = null;
   for (const repo of repos) {
     const r = resolvePathAgainstRepo(repo.abs_path, candidate);
     if (r.exists) {
-      return { ...r, repo_label: repo.label };
-    }
-    if (firstNonExisting === null) {
+      existingMatches.push({ label: repo.label, resolved: r });
+    } else if (firstNonExisting === null) {
       firstNonExisting = { ...r, repo_label: repo.label };
     }
+  }
+  if (existingMatches.length > 1) {
+    return {
+      path: candidate,
+      abs_path: candidate,
+      exists: false,
+      kind: "missing",
+      error: "ambiguous_path",
+      matching_repos: existingMatches.map((m) => m.label),
+    };
+  }
+  if (existingMatches.length === 1) {
+    const m = existingMatches[0];
+    return { ...m.resolved, path: candidate, repo_label: m.label };
   }
   return firstNonExisting!;
 }
 
 export function partitionByExistence(
   resolved: ResolvedPath[],
-): { existing: string[]; missing: string[] } {
+): {
+  existing: string[];
+  missing: string[];
+  ambiguous: { path: string; matching_repos: string[] }[];
+} {
   const existing: string[] = [];
   const missing: string[] = [];
+  const ambiguous: { path: string; matching_repos: string[] }[] = [];
   for (const r of resolved) {
-    if (r.exists) existing.push(r.path);
-    else missing.push(r.path);
+    if (r.error === "ambiguous_path" && r.matching_repos?.length) {
+      ambiguous.push({ path: r.path, matching_repos: r.matching_repos });
+    } else if (r.exists) {
+      existing.push(r.path);
+    } else {
+      missing.push(r.path);
+    }
   }
-  return { existing, missing };
+  return { existing, missing, ambiguous };
 }

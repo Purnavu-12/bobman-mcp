@@ -1,13 +1,35 @@
-import { runInit } from "./init.js";
-import { runStart } from "./start.js";
+import { parseInitArgs, runInit } from "./init.js";
 import { runDoctor } from "./doctor.js";
+
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+function readPkgVersion(): string {
+  try {
+    const here =
+      typeof import.meta !== "undefined" && import.meta.url
+        ? path.dirname(fileURLToPath(import.meta.url))
+        : process.cwd();
+    const pkg = JSON.parse(readFileSync(path.join(here, "..", "package.json"), "utf8")) as {
+      version?: string;
+    };
+    return pkg.version ?? "0.1.0";
+  } catch {
+    return "0.1.0";
+  }
+}
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
+  if (args[0] === "--version" || args[0] === "-V") {
+    process.stdout.write(`${readPkgVersion()}\n`);
+    return;
+  }
   const sub = args[0] ?? "start";
 
   if (sub === "init") {
-    runInit();
+    runInit(parseInitArgs(args.slice(1)));
     return;
   }
 
@@ -39,13 +61,14 @@ async function main(): Promise<void> {
       const port = parseInt(process.env.BOBMAN_HTTP_PORT, 10);
       if (Number.isFinite(port)) httpOptions = { host: "127.0.0.1", port };
     }
+    const { runStart } = await import("./start.js");
     await runStart(repoPath, httpOptions);
     return;
   }
 
   process.stderr.write(
     `Unknown subcommand: ${sub}\n` +
-      "Usage: bobman-mcp [init|start|doctor] [--repo-path <path>] [--http :PORT] [--host 0.0.0.0]\n",
+      "Usage: bobman-mcp [init|start|doctor] [--snippets cursor|vscode|opencode|kiro|all] [--write] [--repo-path <path>] [--http :PORT] [--host 0.0.0.0]\n",
   );
   process.exit(1);
 }

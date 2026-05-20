@@ -29,11 +29,23 @@ export function handleSeedTaskGraph(deps: ToolDeps, raw: unknown) {
       for (const p of t.file_scope ?? []) {
         const r = resolveAgainstRepos(repos, p);
         if (!r.exists) {
-          missing.push({ task_id: t.task_id, path: p, error: r.error });
+          missing.push({
+            task_id: t.task_id,
+            path: p,
+            error: r.error,
+            matching_repos: r.matching_repos,
+          });
         }
       }
     }
     if (missing.length > 0) {
+      const ambiguous = missing.filter((m) => m.error === "ambiguous_path");
+      if (ambiguous.length > 0) {
+        throw new BobmanError("CONFLICT", "file_scope path exists in multiple repos; use label::path", {
+          reason: "ambiguous_path",
+          paths: ambiguous,
+        });
+      }
       throw new BobmanError("INVALID_INPUT", "file_scope contains missing paths", {
         reason: "file_scope_missing",
         missing,

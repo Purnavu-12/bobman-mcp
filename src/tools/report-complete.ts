@@ -93,22 +93,36 @@ export function handleReportComplete(deps: ToolDeps, raw: unknown) {
     "failed" in (sanitizedTests as object) &&
     (sanitizedTests as { failed: number }).failed > 0;
 
-  const testsMismatch =
+  const threshold = deps.testPassThreshold ?? 1;
+  const testsBelowThreshold =
     sanitizedTests &&
     typeof sanitizedTests === "object" &&
     "passed" in (sanitizedTests as object) &&
     "total" in (sanitizedTests as object) &&
-    (sanitizedTests as { passed: number; total: number }).passed !==
-      (sanitizedTests as { passed: number; total: number }).total;
+    (sanitizedTests as { passed: number; total: number }).total > 0 &&
+    (sanitizedTests as { passed: number; total: number }).passed /
+      (sanitizedTests as { passed: number; total: number }).total <
+      threshold;
 
-  if (input.status === "DONE" && (testsFailed || testsMismatch)) {
+  if (input.status === "DONE" && (testsFailed || testsBelowThreshold)) {
     evaluated = "RETRY";
     overruled = true;
-    emitEvent(deps.db, session.session_id, "evaluation_overruled", {
-      task_id: input.task_id,
-      attempt: input.attempt,
-      reason: "done_with_failing_tests",
-    });
+    const reason = testsBelowThreshold
+      ? "below_test_pass_threshold"
+      : "done_with_failing_tests";
+    emitEvent(
+      deps.db,
+      session.session_id,
+      testsBelowThreshold ? "evaluation_threshold_failed" : "evaluation_overruled",
+      {
+        task_id: input.task_id,
+        attempt: input.attempt,
+        reason,
+        threshold,
+        passed: (sanitizedTests as { passed?: number })?.passed,
+        total: (sanitizedTests as { total?: number })?.total,
+      },
+    );
   } else if (input.status === "DONE") {
     evaluated = "DONE";
   } else {

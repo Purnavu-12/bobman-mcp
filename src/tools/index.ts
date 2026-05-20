@@ -37,6 +37,8 @@ import { handleQueryKnowledge } from "./query-knowledge.js";
 import { handleReportComplete } from "./report-complete.js";
 import { handleSeedTaskGraph } from "./seed-task-graph.js";
 import { handleSummarizeSession } from "./summarize-session.js";
+import { handleRunSprintReflection } from "./run-sprint-reflection.js";
+import { handleListSessions, ListSessionsInputSchema } from "./list-sessions.js";
 import { AddSessionRepoInputSchema, handleAddSessionRepo } from "./add-session-repo.js";
 import { handleValidateFileScope } from "./validate-file-scope.js";
 import type { ToolDeps } from "./deps.js";
@@ -61,6 +63,16 @@ function wrapHandler(
 }
 
 export function registerAllTools(server: McpServer, deps: ToolDeps): void {
+  server.registerTool(
+    "list_sessions",
+    {
+      description:
+        "Call this WHEN you need recent BobMan sessions from the local database (read-only). Always use before picking a session for status or reflection tools. Never mutates session state.",
+      inputSchema: ListSessionsInputSchema,
+    },
+    wrapHandler(deps, handleListSessions),
+  );
+
   server.registerTool(
     "create_session",
     {
@@ -162,6 +174,26 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
   );
 
   server.registerTool(
+    "analyze_codebase",
+    {
+      description:
+        "Call this WHEN you need symbols and a call graph indexed (PRD alias for analyze_repo). Always invoke before get_impact_map or get_risk_score. Never call mid-task.",
+      inputSchema: AnalyzeRepoInputSchema,
+    },
+    wrapHandler(deps, handleAnalyzeRepo),
+  );
+
+  server.registerTool(
+    "create_task_graph",
+    {
+      description:
+        "Call this WHEN you need a PRD-style task graph draft (alias for decompose_objective). Always follow with seed_task_graph to materialize the DAG. Never skip seed_task_graph if you need get_next_task.",
+      inputSchema: DecomposeObjectiveInputSchema,
+    },
+    wrapHandler(deps, handleDecomposeObjective),
+  );
+
+  server.registerTool(
     "get_impact_map",
     {
       description:
@@ -215,10 +247,20 @@ export function registerAllTools(server: McpServer, deps: ToolDeps): void {
     "summarize_session",
     {
       description:
-        "Call this WHEN you need a structured retrospective of the session: task counts, event histogram, top file hotspots, top risk scores. Deterministic — built from existing SQLite tables, no LLM call. Always pair with the user-facing prose if you want a narrative. Never expect cross-session aggregation.",
+        "Call this WHEN you need a structured retrospective of the session: task counts, event histogram, top hotspots, risks, shipped-vs-planned, and bottleneck signals. Deterministic — no LLM. Always pair with user-facing prose if you want a narrative. Never expect cross-session aggregation.",
       inputSchema: SummarizeSessionInputSchema,
     },
     wrapHandler(deps, handleSummarizeSession),
+  );
+
+  server.registerTool(
+    "run_sprint_reflection",
+    {
+      description:
+        "Call this WHEN you need a sprint-style report since a date: planned DONE tasks vs git commits/files touched, release tags, retry and evaluation friction counts. Alias of summarize_session with the same inputs. Always run after git index or analyze_repo when you need hotspot context. Never treat as a write operation.",
+      inputSchema: SummarizeSessionInputSchema,
+    },
+    wrapHandler(deps, handleRunSprintReflection),
   );
 
   server.registerTool(

@@ -1,5 +1,6 @@
 import type { BobmanDatabase } from "../state/db.js";
 import { nowMs } from "../state/db.js";
+import { coverageGapForFile as lookupCoverageGap } from "../lib/coverage.js";
 import { emitEvent } from "../state/session.js";
 
 export interface RiskComponents {
@@ -104,10 +105,8 @@ function symbolToFile(
   return row?.rel_path ?? null;
 }
 
-function coverageGapForFile(): number {
-  // No coverage data in v1. Constant 0.5 mid-risk for any source file is too noisy;
-  // we return 0 to ensure other components dominate and the metric is reserved for v2.
-  return 0;
+function coverageGapForFile(db: BobmanDatabase, sessionId: string, relPath: string): number {
+  return lookupCoverageGap(db, sessionId, relPath).gap;
 }
 
 function loadCached(
@@ -174,7 +173,7 @@ export function scoreFile(
   const windowDays = options.windowDays ?? WINDOW_DAYS_DEFAULT;
   const fanIn = fanInForFile(db, sessionId, relPath);
   const { churn, conflict } = churnForFile(db, sessionId, relPath, windowDays);
-  const coverageGap = coverageGapForFile();
+  const coverageGap = coverageGapForFile(db, sessionId, relPath);
 
   const score: RiskScore = {
     session_id: sessionId,
@@ -219,6 +218,7 @@ export function scoreSymbol(
     options.windowDays ?? WINDOW_DAYS_DEFAULT,
   );
 
+  const coverageGap = coverageGapForFile(db, sessionId, file);
   const score: RiskScore = {
     session_id: sessionId,
     component_key: componentKey,
@@ -226,7 +226,7 @@ export function scoreSymbol(
     fan_in: normalize(fanIn, 50),
     churn: normalize(churn, 50),
     conflict: normalize(conflict, 5),
-    coverage_gap: 0,
+    coverage_gap: coverageGap,
     composite: 0,
     computed_at: nowMs(),
   };

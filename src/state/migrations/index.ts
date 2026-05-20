@@ -4,6 +4,7 @@ import { MIGRATION_003_DDL, MIGRATION_003_VERSION } from "./003_analyzer.js";
 import { MIGRATION_004_DDL, MIGRATION_004_VERSION } from "./004_risk.js";
 import { MIGRATION_005_DDL, MIGRATION_005_VERSION } from "./005_knowledge.js";
 import { MIGRATION_006_DDL, MIGRATION_006_VERSION } from "./006_multi_repo.js";
+import { MIGRATION_007_DDL, MIGRATION_007_VERSION } from "./007_coverage.js";
 
 export interface Migration {
   version: number;
@@ -18,6 +19,7 @@ export const MIGRATIONS: Migration[] = [
   { version: MIGRATION_004_VERSION, name: "risk", ddl: MIGRATION_004_DDL },
   { version: MIGRATION_005_VERSION, name: "knowledge", ddl: MIGRATION_005_DDL },
   { version: MIGRATION_006_VERSION, name: "multi_repo", ddl: MIGRATION_006_DDL },
+  { version: MIGRATION_007_VERSION, name: "coverage", ddl: MIGRATION_007_DDL },
 ];
 
 export const KNOWN_SCHEMA_VERSION = Math.max(...MIGRATIONS.map((m) => m.version));

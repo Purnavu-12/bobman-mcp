@@ -1,7 +1,7 @@
 # BobMan MCP
 
 [![npm version](https://img.shields.io/npm/v/bobman-mcp.svg)](https://www.npmjs.com/package/bobman-mcp)
-[![CI](https://github.com/bobman-mcp/bobman-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/bobman-mcp/bobman-mcp/actions/workflows/ci.yml)
+[![CI](https://github.com/Purnavu-12/bobman-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/Purnavu-12/bobman-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Add to `~/.cursor/mcp.json`:
@@ -27,13 +27,20 @@ claude mcp add bobman npx -y bobman-mcp
 
 BobMan is a closed-loop engineering orchestrator MCP. It gives Cursor and Claude Code a stateful task brain: you describe an objective, seed a task graph, and the agent loops through `get_next_task` → work → `report_complete` until the session reaches `COMPLETE` or `BLOCKED`. All state persists in local SQLite — zero external APIs, zero AI cost on the BobMan side.
 
-## Quick start
+**Repository:** [github.com/Purnavu-12/bobman-mcp](https://github.com/Purnavu-12/bobman-mcp)
+
+## Quick start (production)
 
 ```bash
-npm install
-npm run build
-npx bobman-mcp init
+npx bobman-mcp init --snippets all
+npx bobman-mcp doctor
 ```
+
+Use **Node 20 or 22 LTS** on Windows for the smoothest native module install. Full guide: [docs/production.md](docs/production.md).
+
+## Quick start (developers)
+
+Clone, build, and test: [docs/development-local.md](docs/development-local.md).
 
 Run the server (stdio, for MCP hosts):
 
@@ -77,9 +84,48 @@ Code & change intelligence:
 Knowledge & reflection:
 
 - **add_knowledge** / **query_knowledge** — SQLite FTS5 knowledge base scoped per session (decisions, constraints, facts, warnings, todos).
-- **summarize_session** — Deterministic, LLM-free session retrospective (task counts, event histogram, top hotspots and risks). Auto-emitted as a `session_summary` event on `COMPLETE`.
+- **summarize_session** / **run_sprint_reflection** — Deterministic retrospective with shipped-vs-planned (git commits/files, release tags) and bottleneck signals. Auto-emitted on `COMPLETE`.
+- **list_sessions** — Read-only list of recent sessions (VS Code sidebar).
+- **analyze_codebase** / **create_task_graph** — PRD aliases for `analyze_repo` and `decompose_objective` (+ `seed_task_graph` for the DAG).
 
-GitHub & multi-repo:
+## MCP hosts
+
+BobMan works on any MCP stdio host. See [docs/mcp-hosts.md](docs/mcp-hosts.md) for Cursor, Claude Code, VS Code Copilot, OpenCode, Kiro, and more.
+
+```bash
+npx bobman-mcp init --snippets all
+npx bobman-mcp init --snippets vscode --write
+```
+
+Agent workflow: [AGENTS.md](AGENTS.md).
+
+## PRD v1.0 / v1.1
+
+BobMan implements the PRD v1.0 and v1.1 feature set (F-01–F-11) except PRD v2.0 items (Slack, cloud dashboard, PR bot). See [docs/prd-traceability.md](docs/prd-traceability.md) for the full mapping and production acceptance column.
+
+Highlights from the completion wave:
+
+- Real **coverage.json / lcov** ingestion for risk (`coverage_gap`, `risk_score_0_100`, explanations).
+- Configurable **test pass threshold** on `report_complete` (`testPassThreshold` in config).
+- **VS Code extension** — read-only sidebar (optional, not on npm): [docs/vscode-extension.md](docs/vscode-extension.md).
+
+## Documentation
+
+| Doc | Topic |
+|-----|--------|
+| [docs/production.md](docs/production.md) | **npm / npx install (any machine)** |
+| [docs/mcp-hosts.md](docs/mcp-hosts.md) | Cursor, Copilot, OpenCode, Kiro, … |
+| [docs/development-local.md](docs/development-local.md) | Clone + local CLI (maintainers) |
+| [docs/publishing.md](docs/publishing.md) | npm publish, Smithery, going live |
+| [docs/vscode-extension.md](docs/vscode-extension.md) | Sidebar vs MCP, VSIX, Marketplace |
+| [docs/install-windows.md](docs/install-windows.md) | Node ABI / `better-sqlite3` |
+| [docs/http-transport.md](docs/http-transport.md) | Streamable HTTP + token |
+| [docs/github-integration.md](docs/github-integration.md) | `GITHUB_TOKEN` for PR/issue tools |
+| [docs/release-runbook.md](docs/release-runbook.md) | Tag → npm release |
+| [docs/prd-traceability.md](docs/prd-traceability.md) | PRD F-01–F-11 mapping |
+| [AGENTS.md](AGENTS.md) | Agent closed-loop contract |
+
+## GitHub & multi-repo
 
 - **get_pr_context** / **get_issue_context** — Read-only Octokit fetch of PR / issue title, body, labels, files, checks, last-10 comments. Requires `GITHUB_TOKEN`.
 - **add_session_repo** — Attach additional repos to a session; path resolution learns the `label::path` syntax. The legacy `repo_path` stays as the primary (`position = 0`) repo for back-compat.

@@ -3,7 +3,7 @@
   "description": "Closed-loop engineering orchestrator MCP. Gives Cursor and Claude Code a stateful task brain for safe refactoring and feature implementation.",
   "version": "0.1.0",
   "license": "MIT",
-  "homepage": "https://github.com/yourhandle/bobman-mcp",
+  "homepage": "https://github.com/Purnavu-12/bobman-mcp",
   "installation": {
     "npm": "npx -y bobman-mcp"
   }

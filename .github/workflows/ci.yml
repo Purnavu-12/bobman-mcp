@@ -42,6 +42,26 @@ jobs:
       - name: Pack guard
         run: node scripts/check-pack.cjs
 
+  extension-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: npm
+      - name: Install root deps
+        run: npm ci
+      - name: Install extension deps
+        working-directory: extensions/vscode-bobman
+        run: npm install
+      - name: Build VS Code extension
+        working-directory: extensions/vscode-bobman
+        run: npm run build
+      - name: Extension unit tests
+        working-directory: extensions/vscode-bobman
+        run: npm test
+
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest' && matrix.node-version == '20.x'
         uses: actions/upload-artifact@v4

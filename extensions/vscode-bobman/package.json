@@ -1,0 +1,112 @@
+{
+  "name": "vscode-bobman",
+  "displayName": "BobMan",
+  "description": "Read-only sidebar for BobMan MCP sessions, tasks, events, hotspots, risks, and knowledge.",
+  "version": "0.1.0",
+  "publisher": "purnavu-12",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Purnavu-12/bobman-mcp.git",
+    "directory": "extensions/vscode-bobman"
+  },
+  "homepage": "https://github.com/Purnavu-12/bobman-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/Purnavu-12/bobman-mcp/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": ["onView:bobman.sessions"],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "views": {
+      "bobman": [
+        { "id": "bobman.sessions", "name": "Sessions" },
+        { "id": "bobman.tasks", "name": "Tasks" },
+        { "id": "bobman.events", "name": "Events" },
+        { "id": "bobman.hotspots", "name": "Hotspots" },
+        { "id": "bobman.risks", "name": "Risks" },
+        { "id": "bobman.knowledge", "name": "Knowledge" }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "bobman",
+          "title": "BobMan",
+          "icon": "$(symbol-event)"
+        }
+      ]
+    },
+    "commands": [
+      { "command": "bobman.refresh", "title": "BobMan: Refresh" },
+      { "command": "bobman.setActiveSession", "title": "BobMan: Set Active Session" },
+      {
+        "command": "bobman.setActiveSessionId",
+        "title": "BobMan: Set Active Session (by id)",
+        "enablement": "false"
+      },
+      { "command": "bobman.openSettings", "title": "BobMan: Open Settings" },
+      { "command": "bobman.setHttpToken", "title": "BobMan: Set HTTP Token" }
+    ],
+    "configuration": {
+      "title": "BobMan",
+      "properties": {
+        "bobman.transport": {
+          "type": "string",
+          "enum": ["stdio", "http"],
+          "default": "stdio",
+          "description": "Connect via spawned stdio MCP or remote Streamable HTTP."
+        },
+        "bobman.command": {
+          "type": "string",
+          "default": "npx",
+          "description": "Command to launch bobman-mcp (stdio mode)."
+        },
+        "bobman.commandArgs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["-y", "bobman-mcp", "start"],
+          "description": "Arguments for bobman-mcp start."
+        },
+        "bobman.httpUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:7711/mcp",
+          "description": "Streamable HTTP MCP endpoint (http mode)."
+        },
+        "bobman.pollIntervalMs": {
+          "type": "number",
+          "default": 5000,
+          "description": "Tree view refresh interval in milliseconds."
+        },
+        "bobman.activeSessionId": {
+          "type": "string",
+          "default": "",
+          "description": "UUID of the session used for Tasks/Events/Hotspots/Risks/Knowledge views."
+        },
+        "bobman.repoPath": {
+          "type": "string",
+          "default": "",
+          "description": "Repo root for BobMan DB (must match Copilot MCP cwd). Empty = first workspace folder with bobman.config.json."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.1",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.9"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0"
+  }
+}

@@ -5,4 +5,7 @@ export interface ToolDeps {
   shuttingDown?: () => boolean;
   strictFileScope?: boolean;
   defaultMaxAttempts?: number;
+  coveragePaths?: string[];
+  testPassThreshold?: number;
+  analyzeMaxFiles?: number;
 }

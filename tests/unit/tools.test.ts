@@ -178,7 +178,7 @@ describe("tool handlers", () => {
       );
       const next = handleGetNextTask({ db }, { session_id });
       const res = handleReportComplete(
-        { db },
+        { db, testPassThreshold: 0 },
         {
           session_id,
           task_id: next.task_id,

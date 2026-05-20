@@ -61,6 +61,9 @@ export async function runStart(
     dbPath,
     defaultMaxAttempts: config.maxAttempts,
     strictFileScope: config.strictFileScope,
+    coveragePaths: config.coveragePaths,
+    testPassThreshold: config.testPassThreshold,
+    analyzeMaxFiles: config.analyzeMaxFiles,
   });
   installSignalHandlers(handle.shutdown);
 

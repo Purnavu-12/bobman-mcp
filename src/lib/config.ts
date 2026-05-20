@@ -11,6 +11,11 @@ export const BobmanConfigSchema = z
     maxAttempts: z.number().int().min(1).max(5).default(3),
     logLevel: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
     strictFileScope: z.boolean().default(false),
+    coveragePaths: z
+      .array(z.string())
+      .default(["coverage/coverage-final.json", "coverage/lcov.info"]),
+    testPassThreshold: z.number().min(0).max(1).default(1),
+    analyzeMaxFiles: z.number().int().min(0).optional(),
   })
   .strip();
 

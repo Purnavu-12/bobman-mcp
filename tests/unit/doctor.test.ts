@@ -16,15 +16,23 @@ function makeHome(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "bobman-doctor-"));
 }
 
+/** Minimal stand-in for better-sqlite3 (doctor opens :memory:). */
+function mockSqlite(): new (path: string) => { close: () => void } {
+  return class {
+    close() {}
+  };
+}
+
 describe("doctor", () => {
   it("returns all PASS when environment is healthy", () => {
     const home = makeHome();
     const results = runChecks({
-      loadBetterSqlite3: () => ({ ok: true }),
+      loadBetterSqlite3: mockSqlite,
       bobmanHome: home,
       nodeVersion: "v22.22.0",
       nodeAbi: "127",
       gitVersion: gitOk,
+      checkBobmanCli: () => ({ name: "bobman-mcp CLI", status: "PASS" }),
     });
     expect(results.every((r) => r.status === "PASS")).toBe(true);
     expect(exitCodeFor(results)).toBe(0);
@@ -33,7 +41,7 @@ describe("doctor", () => {
   it("FAILs when git binary is missing", () => {
     const home = makeHome();
     const results = runChecks({
-      loadBetterSqlite3: () => ({}),
+      loadBetterSqlite3: mockSqlite,
       bobmanHome: home,
       nodeVersion: "v22.22.0",
       gitVersion: () => {
@@ -65,7 +73,7 @@ describe("doctor", () => {
   it("FAILs Node version outside the supported range", () => {
     const home = makeHome();
     const tooOld = runChecks({
-      loadBetterSqlite3: () => ({}),
+      loadBetterSqlite3: mockSqlite,
       bobmanHome: home,
       nodeVersion: "v18.20.0",
       gitVersion: gitOk,
@@ -73,7 +81,7 @@ describe("doctor", () => {
     expect(tooOld.find((r) => r.name === "Node version")!.status).toBe("FAIL");
 
     const tooNew = runChecks({
-      loadBetterSqlite3: () => ({}),
+      loadBetterSqlite3: mockSqlite,
       bobmanHome: home,
       nodeVersion: "v25.0.0",
       gitVersion: gitOk,
@@ -86,7 +94,7 @@ describe("doctor", () => {
     // Make parent read-only by writing a file where the directory would go
     fs.writeFileSync(home, "occupied");
     const results = runChecks({
-      loadBetterSqlite3: () => ({}),
+      loadBetterSqlite3: mockSqlite,
       bobmanHome: home,
       nodeVersion: "v22.22.0",
       gitVersion: gitOk,
@@ -110,11 +118,12 @@ describe("doctor", () => {
   it("runDoctor exits 0 when all checks pass", async () => {
     const home = makeHome();
     const code = await runDoctor({
-      loadBetterSqlite3: () => ({}),
+      loadBetterSqlite3: mockSqlite,
       bobmanHome: home,
       nodeVersion: "v22.22.0",
       nodeAbi: "127",
       gitVersion: gitOk,
+      checkBobmanCli: () => ({ name: "bobman-mcp CLI", status: "PASS" }),
     });
     expect(code).toBe(0);
   });

@@ -1,7 +1,7 @@
 import type { BobmanDatabase } from "./db.js";
 import { nowMs } from "./db.js";
 import { BobmanError } from "../lib/errors.js";
-import { summarizeSession } from "../lib/reflection.js";
+import { ensureSessionSummary } from "../lib/reflection.js";
 import { ensurePrimaryRepo } from "./repos.js";
 import type { SessionRow, SessionState } from "../schemas/persistence.js";
 import { newSessionId } from "../lib/id.js";
@@ -100,20 +100,9 @@ export function updateSessionState(
     emitEvent(db, sessionId, eventType, eventDetails ?? { from: session.state, to: next });
   }
   if (next === "COMPLETE" && session.state !== "COMPLETE") {
-    try {
-      // Lazy-import so non-COMPLETE flows don't pay the cost. The function is
-      // tiny and synchronous-looking but uses dynamic import to avoid cycles.
-      void emitSessionSummaryOnComplete(db, sessionId);
-    } catch {
-      // Summary is best-effort: never block the COMPLETE transition.
-    }
+    void ensureSessionSummary(db, sessionId).catch(() => {});
   }
   return getSession(db, sessionId)!;
-}
-
-function emitSessionSummaryOnComplete(db: BobmanDatabase, sessionId: string): void {
-  const payload = summarizeSession(db, sessionId);
-  emitEvent(db, sessionId, "session_summary", payload as unknown as Record<string, unknown>);
 }
 
 export function assertSessionState(

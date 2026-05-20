@@ -8,7 +8,7 @@ import { loadConfig } from "../../src/lib/config.js";
 describe("cli init", () => {
   it("writes bobman.config.json with canonical defaults", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bobman-cli-"));
-    runInit(dir);
+    runInit({ cwd: dir, snippets: "cursor" });
     const configPath = path.join(dir, "bobman.config.json");
     expect(fs.existsSync(configPath)).toBe(true);
     const config = JSON.parse(fs.readFileSync(configPath, "utf8")) as {
@@ -25,7 +25,7 @@ describe("cli init", () => {
 
   it("init then loadConfig round-trips as source=file", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bobman-cli-rt-"));
-    runInit(dir);
+    runInit({ cwd: dir, snippets: "cursor" });
     const loaded = loadConfig(dir);
     expect(loaded.source).toBe("file");
     expect(loaded.config.maxAttempts).toBe(3);

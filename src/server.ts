@@ -32,6 +32,9 @@ export interface CreateServerOptions {
   dbPath: string;
   defaultMaxAttempts?: number;
   strictFileScope?: boolean;
+  coveragePaths?: string[];
+  testPassThreshold?: number;
+  analyzeMaxFiles?: number;
 }
 
 export function createServer(options: CreateServerOptions): ServerHandle {
@@ -43,6 +46,9 @@ export function createServer(options: CreateServerOptions): ServerHandle {
     shuttingDown: () => shuttingDown,
     defaultMaxAttempts: options.defaultMaxAttempts,
     strictFileScope: options.strictFileScope,
+    coveragePaths: options.coveragePaths,
+    testPassThreshold: options.testPassThreshold ?? 1,
+    analyzeMaxFiles: options.analyzeMaxFiles,
   };
 
   const server = new McpServer({

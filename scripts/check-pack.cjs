@@ -4,7 +4,12 @@
 const { execSync } = require("node:child_process");
 
 const MAX_BYTES = 5_000_000;
-const REQUIRED_FILES = ["dist/cli/index.cjs", "dist/server.cjs"];
+const REQUIRED_FILES = [
+  "dist/cli/index.cjs",
+  "dist/server.cjs",
+  "docs/production.md",
+  "AGENTS.md",
+];
 
 function main() {
   let raw;

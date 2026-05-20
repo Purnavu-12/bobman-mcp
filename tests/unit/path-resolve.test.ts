@@ -65,12 +65,23 @@ describe("resolvePathAgainstRepo", () => {
 
 describe("partitionByExistence", () => {
   it("splits resolved entries by existence", () => {
-    const { existing, missing } = partitionByExistence([
+    const { existing, missing, ambiguous } = partitionByExistence([
       { path: "a", abs_path: "/a", exists: true, kind: "file" },
       { path: "b", abs_path: "/b", exists: false, kind: "missing" },
       { path: "c", abs_path: "/c", exists: true, kind: "dir" },
     ]);
     expect(existing).toEqual(["a", "c"]);
     expect(missing).toEqual(["b"]);
+    expect(ambiguous).toEqual([]);
+  });
+
+  it("collects ambiguous paths separately", () => {
+    const { existing, missing, ambiguous } = partitionByExistence([
+      { path: "dup", abs_path: "/dup", exists: false, kind: "missing", error: "ambiguous_path", matching_repos: ["api", "web"] },
+      { path: "ok", abs_path: "/ok", exists: true, kind: "file" },
+    ]);
+    expect(ambiguous).toEqual([{ path: "dup", matching_repos: ["api", "web"] }]);
+    expect(existing).toEqual(["ok"]);
+    expect(missing).toEqual([]);
   });
 });

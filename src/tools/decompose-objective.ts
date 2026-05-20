@@ -31,6 +31,7 @@ export function handleDecomposeObjective(deps: ToolDeps, raw: unknown) {
     state: "DECOMPOSING" as const,
     tasks: graph.tasks,
     edges: graph.edges,
+    next_tool: "seed_task_graph",
     next_action_hint:
       "Review the decomposed tasks/edges, edit as needed, then call seed_task_graph to lock them in.",
   };

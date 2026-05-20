@@ -1,70 +1,65 @@
 # Installing bobman-mcp on Windows
 
-BobMan uses `better-sqlite3`, a native module compiled per Node.js ABI. The most common Windows install failure is an ABI mismatch between the Node that ran `npm install` and the Node that Cursor (or another MCP host) uses to start the server.
+## Production (npm)
 
-## Quick diagnosis
+Same as every platform — no custom paths:
 
 ```powershell
+cd C:\path\to\your\repo
+npx bobman-mcp init --snippets vscode --write
 npx bobman-mcp doctor
 ```
 
-The output is a PASS/FAIL table. If the `better-sqlite3 load` row reads `FAIL` you have an ABI mismatch.
-
-## ABI table
-
-| Node version | NODE_MODULE_VERSION (ABI) | Notes |
-|---|---|---|
-| Node 20.x | 115 | LTS, prebuild available |
-| Node 22.x | 127 | Bundled inside Cursor (`...cursor/resources/app/resources/helpers/node.exe`) |
-| Node 24.x | 137 | Current `nodejs.org` stable; requires VS C++ build tools to compile native modules |
-
-`bobman-mcp doctor` prints the active Node version and ABI on its first line.
-
-## Fix 1 — Use Cursor's bundled Node (no build tools required)
-
-If your goal is "run BobMan inside Cursor", point Cursor's MCP config at its own Node binary so the prebuilt `better-sqlite3` for ABI 127 is loaded:
+MCP config (`.vscode/mcp.json`):
 
 ```json
 {
-  "mcpServers": {
+  "servers": {
     "bobman": {
-      "command": "C:\\Users\\<YOU>\\AppData\\Local\\Programs\\cursor\\resources\\app\\resources\\helpers\\node.exe",
-      "args": ["D:/path/to/bobman-mcp/dist/cli/index.cjs", "start"],
-      "cwd": "D:/your/project"
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "bobman-mcp"]
     }
   }
 }
 ```
 
-Then rebuild `better-sqlite3` once against that same Node:
+Open your **project folder** in VS Code. Copilot and the optional BobMan extension both use `npx` and the same `bobman.config.json`.
+
+Full guide: [production.md](production.md).
+
+## Node version on Windows
+
+| Node | ABI | `better-sqlite3` on Windows |
+|------|-----|-----------------------------|
+| 20.x LTS | 115 | Prebuild (recommended) |
+| 22.x LTS | 127 | Prebuild (recommended) |
+| 24.x | 137 | Often needs compile from source |
+
+`bobman-mcp doctor` prints your Node version on line 1. If `better-sqlite3 load` is **FAIL** with `NODE_MODULE_VERSION`, use Node 20/22 or rebuild:
 
 ```powershell
-$cursor = "$env:LOCALAPPDATA\Programs\cursor\resources\app\resources\helpers\node.exe"
-$env:Path = "$([System.IO.Path]::GetDirectoryName($cursor));" + $env:Path
 npm rebuild better-sqlite3
 ```
 
-## Fix 2 — Use system Node 24 (requires build tools)
+(From a global install: `cd` to the package directory, or reinstall with the Node version you will use for `npx`.)
 
-If you want to use system Node 24, you need the Visual Studio "Desktop development with C++" workload installed:
+### Node 24 + compile from source
 
-1. Install **Visual Studio Build Tools 2022** (or VS 2022 Community) with the "Desktop development with C++" workload checked.
-2. Install Python 3.11+ and expose it as `PYTHON` env var or via `npm config set python <path>`.
-3. Run:
-   ```powershell
-   npm rebuild better-sqlite3
-   ```
+1. Install [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) with **Desktop development with C++**.
+2. Python 3.11+ on PATH.
+3. `npm rebuild better-sqlite3`
 
-This compiles a Node 24 (ABI 137) binary from source.
+## VS Code extension (optional)
 
-## Fix 3 — Use a node version manager
+Install `vscode-bobman-*.vsix` from [GitHub Releases](https://github.com/Purnavu-12/bobman-mcp/releases). **Do not** override `bobman.command` unless you are developing BobMan locally — defaults are `npx` + `bobman-mcp`.
 
-`fnm` or `nvm-windows` lets you keep multiple Node versions side by side. After switching versions, always run `npm rebuild better-sqlite3` so the binary matches the active ABI.
+See [vscode-extension.md](vscode-extension.md).
 
-## After the rebuild
+## Editor bundled Node (advanced)
 
-```powershell
-npx bobman-mcp doctor
-```
+Some editors ship their own Node (e.g. ABI 127). Only if `npx` uses a different Node than your editor’s MCP runtime, point MCP at that editor’s `node.exe` **locally** in untracked settings — not in the published repo template. Prefer **Node 22 LTS** system-wide instead.
 
-Every row should read `PASS`. If `better-sqlite3 load` still fails, capture the doctor output and open an issue.
+## Local clone development
+
+See [development-local.md](development-local.md) — not for production users.

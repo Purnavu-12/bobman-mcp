@@ -1,9 +1,10 @@
 import { BobmanError } from "../lib/errors.js";
 import {
   partitionByExistence,
-  resolvePathAgainstRepo,
+  resolveAgainstRepos,
   type ResolvedPath,
 } from "../lib/path-resolve.js";
+import { listSessionRepos } from "../state/repos.js";
 import { enforceTokenBudget } from "../lib/token-budget.js";
 import { GetNextTaskInputSchema } from "../schemas/tool-inputs.js";
 import { emitEvent, getSession, updateSessionState } from "../state/session.js";
@@ -52,8 +53,8 @@ export function handleGetNextTask(deps: ToolDeps, raw: unknown) {
       });
     }
     const response = buildTaskResponse(
+      deps.db,
       session.session_id,
-      session.repo_path,
       task,
       inFlight.attempt,
       true,
@@ -93,13 +94,13 @@ export function handleGetNextTask(deps: ToolDeps, raw: unknown) {
     attempt,
   });
 
-  const response = buildTaskResponse(fresh.session_id, fresh.repo_path, next, attempt, false);
+  const response = buildTaskResponse(deps.db, fresh.session_id, next, attempt, false);
   return enforceTokenBudget(response).value;
 }
 
 function buildTaskResponse(
+  db: ToolDeps["db"],
   sessionId: string,
-  repoPath: string,
   task: {
     task_id: string;
     instruction: string;
@@ -111,7 +112,8 @@ function buildTaskResponse(
   resume: boolean,
 ) {
   const fileScope = JSON.parse(task.file_scope_json) as string[];
-  const resolved: ResolvedPath[] = fileScope.map((p) => resolvePathAgainstRepo(repoPath, p));
+  const repos = listSessionRepos(db, sessionId);
+  const resolved: ResolvedPath[] = fileScope.map((p) => resolveAgainstRepos(repos, p));
   const file_scope_status = partitionByExistence(resolved);
   const next_action_hint = resume
     ? `Resume work on ${task.task_id} (attempt ${attempt}). After finishing, call report_complete with session_id, task_id, attempt=${attempt}, status, findings, and test_results.`

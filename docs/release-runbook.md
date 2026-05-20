@@ -1,5 +1,7 @@
 # Release Runbook
 
+**Repository:** [github.com/Purnavu-12/bobman-mcp](https://github.com/Purnavu-12/bobman-mcp)
+
 Step-by-step procedure for cutting a new `bobman-mcp` release.
 
 ## Pre-flight (10 minutes)
@@ -26,7 +28,7 @@ Step-by-step procedure for cutting a new `bobman-mcp` release.
    npm run lint
    npm run build
    npm test
-   node scripts/check-pack.js
+   node scripts/check-pack.cjs
    ```
 3. Commit and push:
    ```bash
@@ -42,7 +44,7 @@ Step-by-step procedure for cutting a new `bobman-mcp` release.
 
 ## Watch CI (10–20 minutes)
 
-1. Open https://github.com/<org>/<repo>/actions and confirm the `Release` workflow appears
+1. Open https://github.com/Purnavu-12/bobman-mcp/actions and confirm the `Release` workflow appears
 2. Verify all `verify` matrix legs pass (Linux + Windows + macOS × Node 20 + 22 + 24 = 9 jobs)
 3. Verify the `publish` job runs and reports `npm notice` followed by a successful `publish`
 

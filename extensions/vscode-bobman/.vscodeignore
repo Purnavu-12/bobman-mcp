@@ -1,0 +1,6 @@
+.vscode/**
+src/**
+tsconfig.json
+**/*.test.ts
+vitest.config.ts
+node_modules/@types/**

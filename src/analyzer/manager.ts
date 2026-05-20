@@ -31,6 +31,10 @@ const IGNORED_DIRS = new Set([
 export interface AnalyzeRepoOptions {
   paths?: string[];
   force?: boolean;
+  /** Prepended to each stored rel_path (e.g. `web::`) for multi-repo sessions. */
+  pathPrefix?: string;
+  /** Cap files scanned (0 = unlimited). */
+  maxFiles?: number;
 }
 
 export interface AnalyzeRepoSummary {
@@ -112,7 +116,10 @@ export async function analyzeRepo(
 ): Promise<AnalyzeRepoSummary> {
   const started = nowMs();
   const rootAbs = path.resolve(repoPath);
-  const candidates = listCandidates(rootAbs, options.paths);
+  let candidates = listCandidates(rootAbs, options.paths);
+  if (options.maxFiles && options.maxFiles > 0 && candidates.length > options.maxFiles) {
+    candidates = candidates.slice(0, options.maxFiles);
+  }
 
   let filesAnalyzed = 0;
   let filesSkipped = 0;
@@ -152,10 +159,11 @@ export async function analyzeRepo(
     for (let i = 0; i < candidates.length; i += BATCH_SIZE) {
       const batch = candidates.slice(i, i + BATCH_SIZE);
       for (const rel of batch) {
+        const storageRel = options.pathPrefix ? `${options.pathPrefix}${rel}` : rel;
         const language = detectLanguage(rel);
         const language_str = language ?? "unknown";
         const ts = nowMs();
-        const file = insertFile.get(sessionId, rel, language_str, ts) as { file_id: number } | undefined;
+        const file = insertFile.get(sessionId, storageRel, language_str, ts) as { file_id: number } | undefined;
         if (!file) continue;
         const fileId = file.file_id;
 
