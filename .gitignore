@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+*.db
+*.db-wal
+*.db-shm
+*.db.corrupt.*
+.DS_Store
+.env
+.env.local
+bobman.config.json
+
+/openspec
+BobMan_PRD_v1.0.md
+.cursor/plans/
