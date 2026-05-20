@@ -1,8 +1,31 @@
 import { BobmanError } from "../lib/errors.js";
+import type { SessionState } from "../schemas/persistence.js";
 import { GetSessionStatusInputSchema } from "../schemas/tool-inputs.js";
 import { getSession } from "../state/session.js";
 import { getInFlightRun } from "../state/task-graph.js";
 import type { ToolDeps } from "./deps.js";
+
+function recommendationForState(state: SessionState): string {
+  switch (state) {
+    case "INIT":
+      return "Call seed_task_graph to plan the work, then get_next_task to begin.";
+    case "PLANNED":
+      return "Call get_next_task to dispatch the first task.";
+    case "IN_PROGRESS":
+    case "RETRYING":
+      return "Call get_next_task to receive the next concrete instruction.";
+    case "AWAITING_REPORT":
+      return "Finish the current task and call report_complete with status, findings, and test_results.";
+    case "EVALUATING":
+      return "BobMan is evaluating the last report. Call get_session_status again after a moment, or get_next_task to continue.";
+    case "COMPLETE":
+      return "Session is COMPLETE. Start a new session if the user wants more work.";
+    case "BLOCKED":
+      return "Session is BLOCKED. Inspect blockers[] and surface them to the user; do not loop further.";
+    default:
+      return "Call get_next_task to continue.";
+  }
+}
 
 export function handleGetSessionStatus(deps: ToolDeps, raw: unknown) {
   const input = GetSessionStatusInputSchema.parse(raw);
@@ -82,5 +105,6 @@ export function handleGetSessionStatus(deps: ToolDeps, raw: unknown) {
     last_event: lastEvent
       ? { type: lastEvent.type, created_at: lastEvent.created_at }
       : null,
+    recommendation: recommendationForState(session.state),
   };
 }

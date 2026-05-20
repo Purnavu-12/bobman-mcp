@@ -1,6 +1,6 @@
-#!/usr/bin/env node
 import { runInit } from "./init.js";
 import { runStart } from "./start.js";
+import { runDoctor } from "./doctor.js";
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -9,6 +9,11 @@ async function main(): Promise<void> {
   if (sub === "init") {
     runInit();
     return;
+  }
+
+  if (sub === "doctor") {
+    const code = await runDoctor();
+    process.exit(code);
   }
 
   if (sub === "start") {
@@ -21,7 +26,9 @@ async function main(): Promise<void> {
     return;
   }
 
-  process.stderr.write(`Unknown subcommand: ${sub}\nUsage: bobman-mcp [init|start] [--repo-path <path>]\n`);
+  process.stderr.write(
+    `Unknown subcommand: ${sub}\nUsage: bobman-mcp [init|start|doctor] [--repo-path <path>]\n`,
+  );
   process.exit(1);
 }
 

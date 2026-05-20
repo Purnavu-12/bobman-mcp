@@ -79,3 +79,19 @@ export const GetSessionStatusInputSchema = z
     session_id: z.string().uuid(),
   })
   .strip();
+
+export const ValidateFileScopeInputSchema = z
+  .object({
+    session_id: z.string().uuid(),
+    paths: z.array(z.string().min(1).max(512)).min(1).max(50),
+  })
+  .strip();
+
+export const QueryEventsInputSchema = z
+  .object({
+    session_id: z.string().uuid(),
+    types: z.array(z.string().min(1).max(64)).max(50).optional(),
+    since: z.number().int().nonnegative().optional(),
+    limit: z.number().int().min(1).max(500).optional().default(100),
+  })
+  .strip();

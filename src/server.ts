@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { close, open, type BobmanDatabase } from "./state/db.js";
+import { close, KNOWN_SCHEMA_VERSION, open, type BobmanDatabase } from "./state/db.js";
 import { registerAllTools } from "./tools/index.js";
 import type { ToolDeps } from "./tools/deps.js";
 import { logger } from "./lib/logger.js";
@@ -28,13 +28,21 @@ export interface ServerHandle {
   shutdown: () => void;
 }
 
-export function createServer(options: { dbPath: string }): ServerHandle {
+export interface CreateServerOptions {
+  dbPath: string;
+  defaultMaxAttempts?: number;
+  strictFileScope?: boolean;
+}
+
+export function createServer(options: CreateServerOptions): ServerHandle {
   const db = open(options.dbPath);
   let shuttingDown = false;
 
   const deps: ToolDeps = {
     db,
     shuttingDown: () => shuttingDown,
+    defaultMaxAttempts: options.defaultMaxAttempts,
+    strictFileScope: options.strictFileScope,
   };
 
   const server = new McpServer({
@@ -43,6 +51,47 @@ export function createServer(options: { dbPath: string }): ServerHandle {
   });
 
   registerAllTools(server, deps);
+
+  const startedAt = Date.now();
+  const version = readPackageVersion();
+
+  server.registerResource(
+    "bobman-health",
+    "bobman://health",
+    {
+      description: "BobMan environment health snapshot (version, schema_version, db_path, session counts).",
+      mimeType: "application/json",
+    },
+    async () => {
+      const sessionsTotal = (
+        db.prepare(`SELECT COUNT(*) AS c FROM sessions`).get() as { c: number }
+      ).c;
+      const sessionsActive = (
+        db
+          .prepare(
+            `SELECT COUNT(*) AS c FROM sessions WHERE state NOT IN ('COMPLETE', 'BLOCKED')`,
+          )
+          .get() as { c: number }
+      ).c;
+      const body = {
+        version,
+        schema_version: KNOWN_SCHEMA_VERSION,
+        db_path: options.dbPath,
+        sessions_total: sessionsTotal,
+        sessions_active: sessionsActive,
+        started_at: startedAt,
+      };
+      return {
+        contents: [
+          {
+            uri: "bobman://health",
+            mimeType: "application/json",
+            text: JSON.stringify(body),
+          },
+        ],
+      };
+    },
+  );
 
   const shutdown = () => {
     shuttingDown = true;

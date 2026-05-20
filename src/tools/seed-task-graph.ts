@@ -1,4 +1,5 @@
 import { BobmanError } from "../lib/errors.js";
+import { resolvePathAgainstRepo } from "../lib/path-resolve.js";
 import { SeedTaskGraphInputSchema } from "../schemas/tool-inputs.js";
 import { assertSessionState, getSession, updateSessionState } from "../state/session.js";
 import { seedTaskGraph } from "../state/task-graph.js";
@@ -20,7 +21,31 @@ export function handleSeedTaskGraph(deps: ToolDeps, raw: unknown) {
   }
   assertSessionState(session, ["INIT"], "seed_task_graph");
 
-  const result = seedTaskGraph(deps.db, session, input.tasks, input.edges ?? []);
+  if (deps.strictFileScope) {
+    const missing: { task_id: string; path: string; error?: string }[] = [];
+    for (const t of input.tasks) {
+      for (const p of t.file_scope ?? []) {
+        const r = resolvePathAgainstRepo(session.repo_path, p);
+        if (!r.exists) {
+          missing.push({ task_id: t.task_id, path: p, error: r.error });
+        }
+      }
+    }
+    if (missing.length > 0) {
+      throw new BobmanError("INVALID_INPUT", "file_scope contains missing paths", {
+        reason: "file_scope_missing",
+        missing,
+      });
+    }
+  }
+
+  const result = seedTaskGraph(
+    deps.db,
+    session,
+    input.tasks,
+    input.edges ?? [],
+    deps.defaultMaxAttempts ?? 3,
+  );
   updateSessionState(
     deps.db,
     session.session_id,

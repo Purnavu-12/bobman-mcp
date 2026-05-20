@@ -11,12 +11,15 @@
   },
   "files": [
     "dist",
+    "scripts",
+    "docs/install-windows.md",
     "README.md",
     "LICENSE",
+    "SECURITY.md",
     "server.json"
   ],
   "engines": {
-    "node": ">=20.10"
+    "node": ">=20.10 <25"
   },
   "scripts": {
     "build": "tsup",
@@ -24,6 +27,7 @@
     "test:watch": "vitest",
     "lint": "eslint src cli tests --ext .ts",
     "format": "prettier --write \"src/**/*.ts\" \"cli/**/*.ts\" \"tests/**/*.ts\"",
+    "postinstall": "node scripts/postinstall.cjs",
     "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
@@ -31,8 +35,15 @@
     "model-context-protocol",
     "cursor",
     "claude-code",
-    "orchestrator"
+    "orchestrator",
+    "engineering-orchestrator",
+    "closed-loop",
+    "task-graph"
   ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",

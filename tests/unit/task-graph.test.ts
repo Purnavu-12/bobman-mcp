@@ -104,6 +104,46 @@ describe("task graph", () => {
     }
   });
 
+  it("defaultMaxAttempts is applied when task omits max_attempts", () => {
+    const { db, cleanup } = createTempDb();
+    try {
+      const session = createSession(db, "obj", process.cwd());
+      seedTaskGraph(
+        db,
+        session,
+        [{ task_id: "default-max", instruction: "x", acceptance_criteria: "y" }],
+        [],
+        5,
+      );
+      const row = db
+        .prepare(`SELECT max_attempts FROM tasks WHERE task_id = ?`)
+        .get("default-max") as { max_attempts: number };
+      expect(row.max_attempts).toBe(5);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("explicit max_attempts overrides defaultMaxAttempts", () => {
+    const { db, cleanup } = createTempDb();
+    try {
+      const session = createSession(db, "obj", process.cwd());
+      seedTaskGraph(
+        db,
+        session,
+        [{ task_id: "explicit-max", instruction: "x", acceptance_criteria: "y", max_attempts: 2 }],
+        [],
+        5,
+      );
+      const row = db
+        .prepare(`SELECT max_attempts FROM tasks WHERE task_id = ?`)
+        .get("explicit-max") as { max_attempts: number };
+      expect(row.max_attempts).toBe(2);
+    } finally {
+      cleanup();
+    }
+  });
+
   it("pickNextTask idempotent via in-flight run", () => {
     const { db, cleanup } = createTempDb();
     try {

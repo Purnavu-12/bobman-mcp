@@ -1,4 +1,9 @@
 import { BobmanError } from "../lib/errors.js";
+import {
+  partitionByExistence,
+  resolvePathAgainstRepo,
+  type ResolvedPath,
+} from "../lib/path-resolve.js";
 import { enforceTokenBudget } from "../lib/token-budget.js";
 import { GetNextTaskInputSchema } from "../schemas/tool-inputs.js";
 import { emitEvent, getSession, updateSessionState } from "../state/session.js";
@@ -46,7 +51,13 @@ export function handleGetNextTask(deps: ToolDeps, raw: unknown) {
         entity: "task_id",
       });
     }
-    const response = buildTaskResponse(session.session_id, task, inFlight.attempt, true);
+    const response = buildTaskResponse(
+      session.session_id,
+      session.repo_path,
+      task,
+      inFlight.attempt,
+      true,
+    );
     return enforceTokenBudget(response).value;
   }
 
@@ -82,12 +93,13 @@ export function handleGetNextTask(deps: ToolDeps, raw: unknown) {
     attempt,
   });
 
-  const response = buildTaskResponse(fresh.session_id, next, attempt, false);
+  const response = buildTaskResponse(fresh.session_id, fresh.repo_path, next, attempt, false);
   return enforceTokenBudget(response).value;
 }
 
 function buildTaskResponse(
   sessionId: string,
+  repoPath: string,
   task: {
     task_id: string;
     instruction: string;
@@ -99,6 +111,11 @@ function buildTaskResponse(
   resume: boolean,
 ) {
   const fileScope = JSON.parse(task.file_scope_json) as string[];
+  const resolved: ResolvedPath[] = fileScope.map((p) => resolvePathAgainstRepo(repoPath, p));
+  const file_scope_status = partitionByExistence(resolved);
+  const next_action_hint = resume
+    ? `Resume work on ${task.task_id} (attempt ${attempt}). After finishing, call report_complete with session_id, task_id, attempt=${attempt}, status, findings, and test_results.`
+    : `Edit files in file_scope (skip any in file_scope_status.missing), run tests, then call report_complete with session_id, task_id="${task.task_id}", attempt=${attempt}, status, findings, and test_results.`;
   return {
     session_id: sessionId,
     task_id: task.task_id,
@@ -106,8 +123,10 @@ function buildTaskResponse(
     instruction: task.instruction,
     acceptance_criteria: task.acceptance_criteria,
     file_scope: fileScope,
+    file_scope_status,
     estimated_complexity: task.estimated_complexity as "small" | "medium" | "large",
     hints: resume ? { resume: true } : undefined,
+    next_action_hint,
     state: "AWAITING_REPORT" as const,
   };
 }

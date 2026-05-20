@@ -1,5 +1,9 @@
 # BobMan MCP
 
+[![npm version](https://img.shields.io/npm/v/bobman-mcp.svg)](https://www.npmjs.com/package/bobman-mcp)
+[![CI](https://github.com/bobman-mcp/bobman-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/bobman-mcp/bobman-mcp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Add to `~/.cursor/mcp.json`:
 
 ```json
@@ -61,11 +65,13 @@ Database default: `~/.bobman/<repo-hash>.db` (override with `BOBMAN_HOME`).
 
 ## Troubleshooting
 
-**Windows / `better-sqlite3` install fails** — Ensure Node 20+ x64 and run `npm rebuild better-sqlite3`. Use prebuilt binaries when possible.
+Run `npx bobman-mcp doctor` to print a PASS/FAIL diagnostic table covering Node version, `better-sqlite3` load, DB writability, and config presence.
+
+**Windows / `better-sqlite3` ABI mismatch** — Cursor's bundled Node (ABI 127) and system Node 24 (ABI 137) require different prebuilt binaries. See [docs/install-windows.md](docs/install-windows.md) for the recommended fix per setup.
 
 **SQLite locked** — Only one writer per DB file; use distinct sessions or wait for WAL busy timeout (5s).
 
-**Agent does not call tools** — Tool descriptions are written as imperative “call when…” hints; remind the agent to use BobMan at session start.
+**Agent does not call tools** — Tool descriptions are written as imperative "call when…" hints; remind the agent to use BobMan at session start.
 
 ## Contributing
 

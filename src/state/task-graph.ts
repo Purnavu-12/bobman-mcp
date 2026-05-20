@@ -117,6 +117,7 @@ export function seedTaskGraph(
   session: SessionRow,
   tasks: SeedTaskInput[],
   edges: SeedEdgeInput[],
+  defaultMaxAttempts = 3,
 ): { graph_id: string; task_count: number; edge_count: number } {
   validateSeedInput(tasks, edges);
   const graphId = `${session.session_id}-graph`;
@@ -136,7 +137,7 @@ export function seedTaskGraph(
         JSON.stringify(t.file_scope ?? []),
         t.acceptance_criteria,
         t.estimated_complexity ?? "medium",
-        t.max_attempts ?? 3,
+        t.max_attempts ?? defaultMaxAttempts,
         ts,
       );
     }

@@ -13,7 +13,7 @@ describe("MCP server boot", () => {
     shutdown = undefined;
   });
 
-  it("initializes and lists five tools", async () => {
+  it("initializes and lists all tools", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bobman-boot-"));
     const dbPath = path.join(dir, "boot.db");
     const handle = createServer({ dbPath });
@@ -29,8 +29,10 @@ describe("MCP server boot", () => {
       "create_session",
       "get_next_task",
       "get_session_status",
+      "query_events",
       "report_complete",
       "seed_task_graph",
+      "validate_file_scope",
     ]);
     for (const tool of tools.tools) {
       expect(tool.description?.length).toBeGreaterThan(0);

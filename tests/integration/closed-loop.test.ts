@@ -120,23 +120,31 @@ describe("closed-loop integration", () => {
       },
     });
 
-    const t1 = await parseToolResult<{ task_id: string; attempt: number }>(
+    const t1 = await parseToolResult<{
+      task_id: string;
+      attempt: number;
+      next_action_hint?: string;
+    }>(
       await client.callTool({
         name: "get_next_task",
         arguments: { session_id: created.session_id },
       }),
     );
     expect(t1.task_id).toBe("task-a");
+    expect(t1.next_action_hint).toContain("report_complete");
 
-    await client.callTool({
-      name: "report_complete",
-      arguments: {
-        session_id: created.session_id,
-        task_id: t1.task_id,
-        attempt: t1.attempt,
-        status: "FAILED",
-      },
-    });
+    const t1report = await parseToolResult<{ next_recommended_action?: string }>(
+      await client.callTool({
+        name: "report_complete",
+        arguments: {
+          session_id: created.session_id,
+          task_id: t1.task_id,
+          attempt: t1.attempt,
+          status: "FAILED",
+        },
+      }),
+    );
+    expect(t1report.next_recommended_action).toContain("get_next_task");
 
     const t1retry = await parseToolResult<{ task_id: string; attempt: number }>(
       await client.callTool({

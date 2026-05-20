@@ -16,12 +16,29 @@ export interface TokenBudgetResult<T> {
   };
 }
 
+interface FileScopeStatus {
+  existing: string[];
+  missing: string[];
+}
+
+function syncFileScopeStatus(
+  status: FileScopeStatus | undefined,
+  remaining: Set<string>,
+): FileScopeStatus | undefined {
+  if (!status) return status;
+  return {
+    existing: status.existing.filter((p) => remaining.has(p)),
+    missing: status.missing.filter((p) => remaining.has(p)),
+  };
+}
+
 export function enforceTokenBudget<T extends Record<string, unknown>>(
   response: T,
   maxTokens = DEFAULT_MAX_TOKENS,
 ): TokenBudgetResult<T> {
   const clone = structuredClone(response) as T & {
     file_scope?: string[];
+    file_scope_status?: FileScopeStatus;
     truncated?: { file_scope_dropped: number; original_count: number };
   };
 
@@ -36,9 +53,14 @@ export function enforceTokenBudget<T extends Record<string, unknown>>(
   const original = [...clone.file_scope];
   const sorted = [...original].sort((a, b) => b.length - a.length);
   clone.file_scope = sorted;
+  clone.file_scope_status = syncFileScopeStatus(clone.file_scope_status, new Set(sorted));
 
   while (clone.file_scope.length > 0 && overBudget(clone, maxTokens)) {
     clone.file_scope.pop();
+    clone.file_scope_status = syncFileScopeStatus(
+      clone.file_scope_status,
+      new Set(clone.file_scope),
+    );
   }
 
   const dropped = original.length - clone.file_scope.length;
@@ -49,10 +71,15 @@ export function enforceTokenBudget<T extends Record<string, unknown>>(
     };
     while (clone.file_scope.length > 0 && overBudget(clone, maxTokens)) {
       clone.file_scope.pop();
+      clone.file_scope_status = syncFileScopeStatus(
+        clone.file_scope_status,
+        new Set(clone.file_scope),
+      );
       clone.truncated.file_scope_dropped = original.length - clone.file_scope.length;
     }
     if (overBudget(clone, maxTokens)) {
       clone.file_scope = [];
+      clone.file_scope_status = syncFileScopeStatus(clone.file_scope_status, new Set());
       clone.truncated.file_scope_dropped = original.length;
     }
   }

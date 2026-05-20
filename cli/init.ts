@@ -1,16 +1,7 @@
-import fs from "node:fs";
-import path from "node:path";
+import { writeDefaultConfig } from "../src/lib/config.js";
 
 export function runInit(cwd = process.cwd()): void {
-  const configPath = path.join(cwd, "bobman.config.json");
-  const config = {
-    repoPath: cwd.replace(/\\/g, "/"),
-    transport: "stdio",
-    dbPath: null as string | null,
-    maxAttempts: 3,
-    logLevel: "info",
-  };
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n", "utf8");
+  const configPath = writeDefaultConfig(cwd);
 
   const cursorSnippet = `{
   "mcpServers": {

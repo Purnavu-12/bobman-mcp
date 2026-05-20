@@ -187,7 +187,26 @@ function buildResponse(
     evaluated_status: evaluated,
     next_state: nextState,
     message: message ?? `Evaluated as ${evaluated}`,
+    next_recommended_action: recommendedActionForState(nextState),
   };
+}
+
+function recommendedActionForState(state: SessionState): string {
+  switch (state) {
+    case "COMPLETE":
+      return "Session is COMPLETE. Do not call get_next_task. Start a new session if more work is needed.";
+    case "BLOCKED":
+      return "Session is BLOCKED. Surface the blocker to the user and do not loop further; call get_session_status to inspect.";
+    case "RETRYING":
+      return "Call get_next_task to receive the retry of this task. Always re-run the tests after applying the fix.";
+    case "IN_PROGRESS":
+    case "AWAITING_REPORT":
+    case "PLANNED":
+    case "EVALUATING":
+    case "INIT":
+    default:
+      return "Call get_next_task to continue the loop.";
+  }
 }
 
 function persistReport(
