@@ -19,4 +19,21 @@ describe("mappers", () => {
     });
     expect(data.sessions).toEqual([]);
   });
+
+  it("prefers structuredContent when present", () => {
+    const data = parseToolJson<{ sessions: unknown[] }>({
+      content: [{ type: "text", text: "{}" }],
+      structuredContent: { sessions: [{ id: 1 }] },
+    });
+    expect(data.sessions).toHaveLength(1);
+  });
+
+  it("throws on isError with JSON message", () => {
+    expect(() =>
+      parseToolJson({
+        content: [{ type: "text", text: JSON.stringify({ message: "DB locked", code: "LOCKED" }) }],
+        isError: true,
+      }),
+    ).toThrow(/DB locked/);
+  });
 });
