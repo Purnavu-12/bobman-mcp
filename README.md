@@ -57,11 +57,48 @@ Database default: `~/.bobman/<repo-hash>.db` (override with `BOBMAN_HOME`).
 
 ## MCP tools
 
+Core loop:
+
 - **create_session** — Start a persisted engineering session with an objective.
-- **seed_task_graph** — Insert a manual task DAG (tasks + dependency edges) while session is `INIT`.
+- **decompose_objective** — Break a free-form objective into a draft task graph (numbered / bulleted / conjunction-split). Transitions session to `DECOMPOSING`.
+- **seed_task_graph** — Insert a manual or decomposed task DAG (tasks + dependency edges).
 - **get_next_task** — Receive the next bounded task (paths only, never inlined file contents; &lt;2,000 token budget).
 - **report_complete** — Submit findings and test results; BobMan evaluates and advances or retries.
-- **get_session_status** — Read-only progress, in-flight task, blockers, elapsed time.
+- **get_session_status** / **query_events** — Read-only progress, in-flight task, blockers, event tail.
+- **validate_file_scope** — Resolve declared file paths against the session's repo(s).
+
+Code & change intelligence:
+
+- **analyze_repo** — Tree-sitter (web-tree-sitter + WASM grammars) parse of TypeScript / Python / Go / Java / Rust. Persists `file_index`, `symbols`, `call_graph`.
+- **get_impact_map** — BFS over the call graph in `callers` / `callees` / `both` direction, with depth cap and token-budget collapse.
+- **get_change_hotspots** — Frequently-changed files ranked by commits, churn, unique authors, and conflict count, backed by an incremental git indexer (`simple-git`).
+- **get_risk_score** / **get_top_risks** — Composite risk score per file/symbol combining fan-in, churn, conflict, and coverage gap, with cache invalidation on `analyze_repo` and git re-index.
+
+Knowledge & reflection:
+
+- **add_knowledge** / **query_knowledge** — SQLite FTS5 knowledge base scoped per session (decisions, constraints, facts, warnings, todos).
+- **summarize_session** — Deterministic, LLM-free session retrospective (task counts, event histogram, top hotspots and risks). Auto-emitted as a `session_summary` event on `COMPLETE`.
+
+GitHub & multi-repo:
+
+- **get_pr_context** / **get_issue_context** — Read-only Octokit fetch of PR / issue title, body, labels, files, checks, last-10 comments. Requires `GITHUB_TOKEN`.
+- **add_session_repo** — Attach additional repos to a session; path resolution learns the `label::path` syntax. The legacy `repo_path` stays as the primary (`position = 0`) repo for back-compat.
+
+## Transports
+
+Stdio (default, for Cursor / Claude Code MCP hosts):
+
+```bash
+npx bobman-mcp start
+```
+
+Streamable HTTP (for shared dev containers / VS Code Connect mode):
+
+```bash
+BOBMAN_TOKEN=$(openssl rand -hex 16) npx bobman-mcp start --http :7711
+```
+
+Bearer-token authentication is required; binds to `127.0.0.1` by default. See [docs/http-transport.md](docs/http-transport.md) for `curl` examples and security notes. GitHub integration is documented in [docs/github-integration.md](docs/github-integration.md).
 
 ## Troubleshooting
 

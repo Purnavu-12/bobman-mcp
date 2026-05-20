@@ -1,13 +1,16 @@
 import type { BobmanDatabase } from "./db.js";
 import { nowMs } from "./db.js";
 import { BobmanError } from "../lib/errors.js";
+import { summarizeSession } from "../lib/reflection.js";
+import { ensurePrimaryRepo } from "./repos.js";
 import type { SessionRow, SessionState } from "../schemas/persistence.js";
 import { newSessionId } from "../lib/id.js";
 
 export const LEGAL_TRANSITIONS: Record<SessionState, SessionState[]> = {
-  INIT: ["PLANNED"],
-  ANALYZING: [],
-  PLANNED: ["IN_PROGRESS"],
+  INIT: ["DECOMPOSING", "ANALYZING", "PLANNED"],
+  DECOMPOSING: ["PLANNED", "BLOCKED"],
+  ANALYZING: ["INIT", "PLANNED", "BLOCKED"],
+  PLANNED: ["ANALYZING", "IN_PROGRESS"],
   IN_PROGRESS: ["AWAITING_REPORT"],
   AWAITING_REPORT: ["EVALUATING"],
   EVALUATING: ["IN_PROGRESS", "RETRYING", "BLOCKED", "COMPLETE"],
@@ -56,6 +59,7 @@ export function createSession(
     `INSERT INTO sessions (session_id, repo_path, objective, state, created_at, updated_at)
      VALUES (?, ?, ?, 'INIT', ?, ?)`,
   ).run(sessionId, repoPath, objective, ts, ts);
+  ensurePrimaryRepo(db, sessionId, repoPath);
   emitEvent(db, sessionId, "session_created", { objective, repo_path: repoPath });
   return getSession(db, sessionId)!;
 }
@@ -95,7 +99,21 @@ export function updateSessionState(
   if (eventType) {
     emitEvent(db, sessionId, eventType, eventDetails ?? { from: session.state, to: next });
   }
+  if (next === "COMPLETE" && session.state !== "COMPLETE") {
+    try {
+      // Lazy-import so non-COMPLETE flows don't pay the cost. The function is
+      // tiny and synchronous-looking but uses dynamic import to avoid cycles.
+      void emitSessionSummaryOnComplete(db, sessionId);
+    } catch {
+      // Summary is best-effort: never block the COMPLETE transition.
+    }
+  }
   return getSession(db, sessionId)!;
+}
+
+function emitSessionSummaryOnComplete(db: BobmanDatabase, sessionId: string): void {
+  const payload = summarizeSession(db, sessionId);
+  emitEvent(db, sessionId, "session_summary", payload as unknown as Record<string, unknown>);
 }
 
 export function assertSessionState(

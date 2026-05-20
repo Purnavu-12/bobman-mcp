@@ -4,13 +4,10 @@ import path from "node:path";
 import Database from "better-sqlite3";
 import { repoHash } from "../lib/id.js";
 import { logger } from "../lib/logger.js";
-import {
-  MIGRATION_001_DDL,
-  MIGRATION_001_SEED,
-  MIGRATION_001_VERSION,
-} from "./migrations/001_init.js";
+import { MIGRATION_001_SEED } from "./migrations/001_init.js";
+import { KNOWN_SCHEMA_VERSION as SCHEMA_VERSION_FROM_LIST, MIGRATIONS } from "./migrations/index.js";
 
-export const KNOWN_SCHEMA_VERSION = MIGRATION_001_VERSION;
+export const KNOWN_SCHEMA_VERSION = SCHEMA_VERSION_FROM_LIST;
 
 export type BobmanDatabase = Database.Database;
 
@@ -86,8 +83,13 @@ export function runMigrations(db: BobmanDatabase): void {
     return;
   }
 
-  db.exec(MIGRATION_001_DDL);
-  db.prepare(MIGRATION_001_SEED).run(Date.now());
+  for (const m of MIGRATIONS) {
+    if (m.version <= current) continue;
+    db.exec(m.ddl);
+    if (m.version === 1) {
+      db.prepare(MIGRATION_001_SEED).run(Date.now());
+    }
+  }
 }
 
 export function close(db: BobmanDatabase): void {

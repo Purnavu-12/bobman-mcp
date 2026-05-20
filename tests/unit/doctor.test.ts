@@ -2,6 +2,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+
+const gitOk = () => "git version 2.45.0\n";
 import {
   exitCodeFor,
   formatReport,
@@ -22,9 +24,25 @@ describe("doctor", () => {
       bobmanHome: home,
       nodeVersion: "v22.22.0",
       nodeAbi: "127",
+      gitVersion: gitOk,
     });
     expect(results.every((r) => r.status === "PASS")).toBe(true);
     expect(exitCodeFor(results)).toBe(0);
+  });
+
+  it("FAILs when git binary is missing", () => {
+    const home = makeHome();
+    const results = runChecks({
+      loadBetterSqlite3: () => ({}),
+      bobmanHome: home,
+      nodeVersion: "v22.22.0",
+      gitVersion: () => {
+        throw new Error("ENOENT git");
+      },
+    });
+    const git = results.find((r) => r.name === "git binary")!;
+    expect(git.status).toBe("FAIL");
+    expect(git.hint).toContain("git not on PATH");
   });
 
   it("FAILs better-sqlite3 load when require throws", () => {
@@ -36,6 +54,7 @@ describe("doctor", () => {
       bobmanHome: home,
       nodeVersion: "v24.0.0",
       nodeAbi: "137",
+      gitVersion: gitOk,
     });
     const native = results.find((r) => r.name === "better-sqlite3 load")!;
     expect(native.status).toBe("FAIL");
@@ -49,6 +68,7 @@ describe("doctor", () => {
       loadBetterSqlite3: () => ({}),
       bobmanHome: home,
       nodeVersion: "v18.20.0",
+      gitVersion: gitOk,
     });
     expect(tooOld.find((r) => r.name === "Node version")!.status).toBe("FAIL");
 
@@ -56,6 +76,7 @@ describe("doctor", () => {
       loadBetterSqlite3: () => ({}),
       bobmanHome: home,
       nodeVersion: "v25.0.0",
+      gitVersion: gitOk,
     });
     expect(tooNew.find((r) => r.name === "Node version")!.status).toBe("FAIL");
   });
@@ -68,6 +89,7 @@ describe("doctor", () => {
       loadBetterSqlite3: () => ({}),
       bobmanHome: home,
       nodeVersion: "v22.22.0",
+      gitVersion: gitOk,
     });
     expect(results.find((r) => r.name === "DB directory writable")!.status).toBe("FAIL");
   });
@@ -92,6 +114,7 @@ describe("doctor", () => {
       bobmanHome: home,
       nodeVersion: "v22.22.0",
       nodeAbi: "127",
+      gitVersion: gitOk,
     });
     expect(code).toBe(0);
   });

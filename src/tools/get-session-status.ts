@@ -8,7 +8,11 @@ import type { ToolDeps } from "./deps.js";
 function recommendationForState(state: SessionState): string {
   switch (state) {
     case "INIT":
-      return "Call seed_task_graph to plan the work, then get_next_task to begin.";
+      return "Call decompose_objective for a heuristic plan, or call seed_task_graph directly to lock in a custom DAG.";
+    case "DECOMPOSING":
+      return "Review the decomposition, edit if needed, then call seed_task_graph to lock the plan.";
+    case "ANALYZING":
+      return "BobMan is indexing the repo. Wait for analyze_repo to complete or call get_session_status again.";
     case "PLANNED":
       return "Call get_next_task to dispatch the first task.";
     case "IN_PROGRESS":

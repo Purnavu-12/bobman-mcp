@@ -1,6 +1,7 @@
 import { BobmanError } from "../lib/errors.js";
-import { resolvePathAgainstRepo } from "../lib/path-resolve.js";
+import { resolveAgainstRepos } from "../lib/path-resolve.js";
 import { SeedTaskGraphInputSchema } from "../schemas/tool-inputs.js";
+import { listSessionRepos } from "../state/repos.js";
 import { assertSessionState, getSession, updateSessionState } from "../state/session.js";
 import { seedTaskGraph } from "../state/task-graph.js";
 import type { ToolDeps } from "./deps.js";
@@ -19,13 +20,14 @@ export function handleSeedTaskGraph(deps: ToolDeps, raw: unknown) {
       session_id: input.session_id,
     });
   }
-  assertSessionState(session, ["INIT"], "seed_task_graph");
+  assertSessionState(session, ["INIT", "DECOMPOSING"], "seed_task_graph");
 
   if (deps.strictFileScope) {
+    const repos = listSessionRepos(deps.db, session.session_id);
     const missing: { task_id: string; path: string; error?: string }[] = [];
     for (const t of input.tasks) {
       for (const p of t.file_scope ?? []) {
-        const r = resolvePathAgainstRepo(session.repo_path, p);
+        const r = resolveAgainstRepos(repos, p);
         if (!r.exists) {
           missing.push({ task_id: t.task_id, path: p, error: r.error });
         }

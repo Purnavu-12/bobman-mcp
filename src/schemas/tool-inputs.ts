@@ -95,3 +95,95 @@ export const QueryEventsInputSchema = z
     limit: z.number().int().min(1).max(500).optional().default(100),
   })
   .strip();
+
+export const DecomposeObjectiveInputSchema = z
+  .object({
+    session_id: z.string().uuid(),
+  })
+  .strip();
+
+export const GetChangeHotspotsInputSchema = z
+  .object({
+    session_id: z.string().uuid(),
+    window_days: z.number().int().min(1).max(730).optional().default(90),
+    limit: z.number().int().min(1).max(100).optional().default(10),
+  })
+  .strip();
+
+export const AnalyzeRepoInputSchema = z
+  .object({
+    session_id: z.string().uuid(),
+    paths: z.array(z.string().min(1).max(512)).max(500).optional(),
+    force: z.boolean().optional().default(false),
+  })
+  .strip();
+
+export const GetImpactMapInputSchema = z
+  .object({
+    session_id: z.string().uuid(),
+    target: z.string().min(1).max(512),
+    direction: z.enum(["callers", "callees", "both"]).optional().default("both"),
+    depth: z.number().int().min(1).max(5).optional().default(2),
+  })
+  .strip();
+
+export const GetRiskScoreInputSchema = z
+  .object({
+    session_id: z.string().uuid(),
+    component: z.string().min(1).max(512),
+    kind: z.enum(["file", "symbol"]).optional().default("file"),
+    window_days: z.number().int().min(1).max(730).optional().default(90),
+  })
+  .strip();
+
+export const GetTopRisksInputSchema = z
+  .object({
+    session_id: z.string().uuid(),
+    limit: z.number().int().min(1).max(50).optional().default(10),
+    window_days: z.number().int().min(1).max(730).optional().default(90),
+  })
+  .strip();
+
+export const AddKnowledgeInputSchema = z
+  .object({
+    session_id: z.string().uuid(),
+    kind: z.enum(["decision", "constraint", "fact", "warning", "todo"]),
+    title: z.string().min(1).max(256),
+    body: z.string().min(1).max(16384),
+    source_ref: z.string().min(1).max(512).optional(),
+  })
+  .strip();
+
+export const QueryKnowledgeInputSchema = z
+  .object({
+    session_id: z.string().uuid(),
+    q: z.string().min(1).max(512),
+    kind: z.enum(["decision", "constraint", "fact", "warning", "todo"]).optional(),
+    limit: z.number().int().min(1).max(50).optional().default(10),
+  })
+  .strip();
+
+export const SummarizeSessionInputSchema = z
+  .object({
+    session_id: z.string().uuid(),
+    since: z.number().int().nonnegative().optional(),
+  })
+  .strip();
+
+export const GetPrContextInputSchema = z
+  .object({
+    session_id: z.string().uuid(),
+    owner: z.string().min(1).max(128),
+    repo: z.string().min(1).max(128),
+    pr_number: z.number().int().positive(),
+  })
+  .strip();
+
+export const GetIssueContextInputSchema = z
+  .object({
+    session_id: z.string().uuid(),
+    owner: z.string().min(1).max(128),
+    repo: z.string().min(1).max(128),
+    issue_number: z.number().int().positive(),
+  })
+  .strip();

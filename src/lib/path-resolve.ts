@@ -73,6 +73,61 @@ export function resolvePathAgainstRepo(repoPath: string, candidate: string): Res
   }
 }
 
+export interface RepoLike {
+  label: string;
+  abs_path: string;
+  position: number;
+}
+
+const LABEL_SEP = "::";
+
+export function parseLabelledPath(candidate: string): { label?: string; rel: string } {
+  const idx = candidate.indexOf(LABEL_SEP);
+  if (idx <= 0) return { rel: candidate };
+  return { label: candidate.slice(0, idx), rel: candidate.slice(idx + LABEL_SEP.length) };
+}
+
+export function resolveAgainstRepos(
+  repos: RepoLike[],
+  candidate: string,
+): ResolvedPath & { repo_label?: string } {
+  if (repos.length === 0) {
+    return {
+      path: candidate,
+      abs_path: candidate,
+      exists: false,
+      kind: "missing",
+      error: "no_repos_configured",
+    };
+  }
+  const parsed = parseLabelledPath(candidate);
+  if (parsed.label) {
+    const repo = repos.find((r) => r.label === parsed.label);
+    if (!repo) {
+      return {
+        path: candidate,
+        abs_path: candidate,
+        exists: false,
+        kind: "missing",
+        error: "unknown_repo_label",
+      };
+    }
+    const r = resolvePathAgainstRepo(repo.abs_path, parsed.rel);
+    return { ...r, path: candidate, repo_label: repo.label };
+  }
+  let firstNonExisting: (ResolvedPath & { repo_label?: string }) | null = null;
+  for (const repo of repos) {
+    const r = resolvePathAgainstRepo(repo.abs_path, candidate);
+    if (r.exists) {
+      return { ...r, repo_label: repo.label };
+    }
+    if (firstNonExisting === null) {
+      firstNonExisting = { ...r, repo_label: repo.label };
+    }
+  }
+  return firstNonExisting!;
+}
+
 export function partitionByExistence(
   resolved: ResolvedPath[],
 ): { existing: string[]; missing: string[] } {

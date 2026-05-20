@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -15,6 +16,7 @@ export interface DoctorDeps {
   bobmanHome?: string;
   nodeVersion?: string;
   nodeAbi?: string;
+  gitVersion?: () => string;
 }
 
 const MIN_NODE_MAJOR = 20;
@@ -75,6 +77,25 @@ function checkDbDirectoryWritable(home: string): CheckResult {
   }
 }
 
+function checkGitBinary(probe: () => string): CheckResult {
+  try {
+    const out = probe();
+    const match = /git version ([\d.]+)/.exec(out);
+    return {
+      name: "git binary",
+      status: "PASS",
+      hint: match ? `version ${match[1]}` : out.trim().slice(0, 80),
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message.split("\n")[0] : String(err);
+    return {
+      name: "git binary",
+      status: "FAIL",
+      hint: `git not on PATH (${msg}). get_change_hotspots and risk scoring need a local git.`,
+    };
+  }
+}
+
 function checkConfigPresent(repoPath: string): CheckResult {
   const configPath = path.join(repoPath, "bobman.config.json");
   if (!fs.existsSync(configPath)) {
@@ -108,10 +129,15 @@ export function runChecks(deps: DoctorDeps = {}): CheckResult[] {
   const home = deps.bobmanHome ?? process.env.BOBMAN_HOME ?? path.join(os.homedir(), ".bobman");
   const repoPath = process.cwd();
 
+  const gitProbe =
+    deps.gitVersion ??
+    (() => execFileSync("git", ["--version"], { encoding: "utf8", timeout: 2000 }));
+
   return [
     checkNode(nodeVersion),
     checkBetterSqlite3(loader),
     checkDbDirectoryWritable(home),
+    checkGitBinary(gitProbe),
     checkConfigPresent(repoPath),
   ];
 }

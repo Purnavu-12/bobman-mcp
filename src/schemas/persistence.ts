@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const SessionStateSchema = z.enum([
   "INIT",
+  "DECOMPOSING",
   "ANALYZING",
   "PLANNED",
   "IN_PROGRESS",

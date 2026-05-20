@@ -1,12 +1,35 @@
 import path from "node:path";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { createServer, installSignalHandlers } from "../src/server.js";
 import { BobmanError } from "../src/lib/errors.js";
 import { loadConfig } from "../src/lib/config.js";
 import { resolveDbPath } from "../src/state/db.js";
 import { createStdioTransport } from "../src/transport/stdio.js";
+import { startHttpServer } from "../src/transport/http.js";
 import { logger } from "../src/lib/logger.js";
 
-export async function runStart(repoPathArg?: string): Promise<void> {
+export interface StartOptions {
+  repoPath?: string;
+  http?: { host: string; port: number } | null;
+}
+
+function readPkgVersion(): string {
+  try {
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const pkg = JSON.parse(readFileSync(path.join(here, "..", "package.json"), "utf8")) as {
+      version?: string;
+    };
+    return pkg.version ?? "0.1.0";
+  } catch {
+    return "0.1.0";
+  }
+}
+
+export async function runStart(
+  repoPathArg?: string,
+  httpOptions?: { host: string; port: number },
+): Promise<void> {
   const repoPath = path.resolve(repoPathArg ?? process.cwd());
 
   let loaded;
@@ -34,16 +57,52 @@ export async function runStart(repoPathArg?: string): Promise<void> {
     dbPath = resolveDbPath(repoPath);
   }
 
-  const { server, shutdown } = createServer({
+  const handle = createServer({
     dbPath,
     defaultMaxAttempts: config.maxAttempts,
     strictFileScope: config.strictFileScope,
   });
-  installSignalHandlers(shutdown);
+  installSignalHandlers(handle.shutdown);
+
+  if (httpOptions) {
+    const token = process.env.BOBMAN_TOKEN;
+    if (httpOptions.host !== "127.0.0.1" && httpOptions.host !== "localhost" && !token) {
+      process.stderr.write(
+        "BOBMAN_TOKEN must be set when binding to a non-loopback host. Refusing to start.\n",
+      );
+      handle.shutdown();
+      process.exit(1);
+    }
+    const httpServer = await startHttpServer({
+      host: httpOptions.host,
+      port: httpOptions.port,
+      token,
+      handle,
+      version: readPkgVersion(),
+      startedAt: Date.now(),
+    });
+    const bound = httpServer.address();
+    logger.info(
+      {
+        repoPath,
+        dbPath,
+        configSource: source,
+        logLevel: config.logLevel,
+        transport: "http",
+        host: bound.host,
+        port: bound.port,
+      },
+      "BobMan MCP server starting (HTTP)",
+    );
+    process.once("SIGINT", () => void httpServer.close());
+    process.once("SIGTERM", () => void httpServer.close());
+    return;
+  }
+
   const transport = createStdioTransport();
   logger.info(
-    { repoPath, dbPath, configSource: source, logLevel: config.logLevel },
+    { repoPath, dbPath, configSource: source, logLevel: config.logLevel, transport: "stdio" },
     "BobMan MCP server starting",
   );
-  await server.connect(transport);
+  await handle.server.connect(transport);
 }

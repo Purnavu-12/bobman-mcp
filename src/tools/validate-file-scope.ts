@@ -1,6 +1,7 @@
 import { BobmanError } from "../lib/errors.js";
-import { resolvePathAgainstRepo } from "../lib/path-resolve.js";
+import { resolveAgainstRepos } from "../lib/path-resolve.js";
 import { ValidateFileScopeInputSchema } from "../schemas/tool-inputs.js";
+import { listSessionRepos } from "../state/repos.js";
 import { getSession } from "../state/session.js";
 import type { ToolDeps } from "./deps.js";
 
@@ -14,11 +15,13 @@ export function handleValidateFileScope(deps: ToolDeps, raw: unknown) {
     });
   }
 
-  const resolved = input.paths.map((p) => resolvePathAgainstRepo(session.repo_path, p));
+  const repos = listSessionRepos(deps.db, session.session_id);
+  const resolved = input.paths.map((p) => resolveAgainstRepos(repos, p));
 
   return {
     session_id: session.session_id,
     repo_path: session.repo_path,
+    repos,
     resolved,
   };
 }

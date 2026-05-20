@@ -6,12 +6,14 @@ import Database from "better-sqlite3";
 import { close, KNOWN_SCHEMA_VERSION, open } from "../../src/state/db.js";
 
 describe("database migrations", () => {
-  it("fresh database creates schema v1", () => {
+  it("fresh database creates schema up to KNOWN_SCHEMA_VERSION", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bobman-db-"));
     const dbPath = path.join(dir, "fresh.db");
     const db = open(dbPath);
-    const version = db.prepare("SELECT version FROM schema_version").get() as { version: number };
-    expect(version.version).toBe(1);
+    const maxV = db.prepare("SELECT MAX(version) AS v FROM schema_version").get() as {
+      v: number;
+    };
+    expect(maxV.v).toBe(KNOWN_SCHEMA_VERSION);
     const tables = db
       .prepare(
         `SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name`,
@@ -34,10 +36,15 @@ describe("database migrations", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bobman-db2-"));
     const dbPath = path.join(dir, "reopen.db");
     const db1 = open(dbPath);
+    const beforeCount = (
+      db1.prepare("SELECT COUNT(*) AS c FROM schema_version").get() as { c: number }
+    ).c;
     close(db1);
     const db2 = open(dbPath);
-    const count = db2.prepare("SELECT COUNT(*) AS c FROM schema_version").get() as { c: number };
-    expect(count.c).toBe(1);
+    const afterCount = (
+      db2.prepare("SELECT COUNT(*) AS c FROM schema_version").get() as { c: number }
+    ).c;
+    expect(afterCount).toBe(beforeCount);
     close(db2);
   });
 
@@ -58,8 +65,10 @@ describe("database migrations", () => {
     const dbPath = path.join(dir, "empty.db");
     fs.writeFileSync(dbPath, "");
     const db = open(dbPath);
-    const version = db.prepare("SELECT version FROM schema_version").get() as { version: number };
-    expect(version.version).toBe(KNOWN_SCHEMA_VERSION);
+    const maxV = db.prepare("SELECT MAX(version) AS v FROM schema_version").get() as {
+      v: number;
+    };
+    expect(maxV.v).toBe(KNOWN_SCHEMA_VERSION);
     close(db);
     const corrupt = fs.readdirSync(dir).filter((f) => f.includes(".corrupt."));
     expect(corrupt.length).toBe(1);

@@ -26,12 +26,24 @@ describe("MCP server boot", () => {
     const tools = await client.listTools();
     const names = tools.tools.map((t) => t.name).sort();
     expect(names).toEqual([
+      "add_knowledge",
+      "add_session_repo",
+      "analyze_repo",
       "create_session",
+      "decompose_objective",
+      "get_change_hotspots",
+      "get_impact_map",
+      "get_issue_context",
       "get_next_task",
+      "get_pr_context",
+      "get_risk_score",
       "get_session_status",
+      "get_top_risks",
       "query_events",
+      "query_knowledge",
       "report_complete",
       "seed_task_graph",
+      "summarize_session",
       "validate_file_scope",
     ]);
     for (const tool of tools.tools) {
