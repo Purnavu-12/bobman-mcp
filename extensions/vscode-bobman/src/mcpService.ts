@@ -1,5 +1,6 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { bobmanChildEnv } from "./childEnv.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -70,6 +71,7 @@ export class BobmanMcpService {
         command,
         args,
         cwd: repoPath,
+        env: bobmanChildEnv(),
       });
     }
 

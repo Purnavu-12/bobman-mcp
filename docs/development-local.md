@@ -9,7 +9,7 @@ git clone https://github.com/Purnavu-12/bobman-mcp.git
 cd bobman-mcp
 npm install
 npm run build
-npm test
+npm test   # pretest runs ensure-built.cjs if dist/ is missing
 ```
 
 ## Run CLI from clone
