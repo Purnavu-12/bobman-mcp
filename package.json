@@ -27,6 +27,7 @@
   },
   "scripts": {
     "build": "tsup",
+    "pretest": "node scripts/ensure-built.cjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint src cli tests --ext .ts",
