@@ -18,7 +18,7 @@ MCP config (`.vscode/mcp.json`):
     "bobman": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "bobman-mcp"]
+      "args": ["-y", "bobman-mcp@0.1.1"]
     }
   }
 }

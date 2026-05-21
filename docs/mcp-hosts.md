@@ -2,7 +2,9 @@
 
 **Repository:** [github.com/Purnavu-12/bobman-mcp](https://github.com/Purnavu-12/bobman-mcp)
 
-BobMan speaks standard MCP over **stdio** (`npx -y bobman-mcp`) or **Streamable HTTP** (see [http-transport.md](http-transport.md)). Hosts differ only in config file location and JSON shape.
+BobMan speaks standard MCP over **stdio** (`npx -y bobman-mcp@0.1.1`) or **Streamable HTTP** (see [http-transport.md](http-transport.md)). Hosts differ only in config file location and JSON shape.
+
+**Always pin the version** in MCP config (`bobman-mcp@X.Y.Z`) so `npx` does not pick up a `npm link`’d git clone. On Windows, the published npm bin prefers **Cursor’s bundled Node 22** when installed, which avoids `better-sqlite3` ABI mismatches when Cursor MCP uses Node 24.
 
 For the optional read-only VS Code sidebar (not required for MCP), see [vscode-extension.md](vscode-extension.md).
 

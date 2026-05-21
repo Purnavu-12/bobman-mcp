@@ -2,7 +2,7 @@
   "name": "vscode-bobman",
   "displayName": "BobMan",
   "description": "Read-only sidebar for BobMan MCP sessions, tasks, events, hotspots, risks, and knowledge.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "purnavu-12",
   "license": "MIT",
   "repository": {
@@ -68,7 +68,7 @@
         "bobman.commandArgs": {
           "type": "array",
           "items": { "type": "string" },
-          "default": ["-y", "bobman-mcp", "start"],
+          "default": ["-y", "bobman-mcp@0.1.1", "start"],
           "description": "Arguments for bobman-mcp start."
         },
         "bobman.httpUrl": {

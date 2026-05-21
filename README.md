@@ -11,7 +11,7 @@ Add to `~/.cursor/mcp.json`:
   "mcpServers": {
     "bobman": {
       "command": "npx",
-      "args": ["-y", "bobman-mcp"]
+      "args": ["-y", "bobman-mcp@0.1.1"]
     }
   }
 }

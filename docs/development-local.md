@@ -33,6 +33,20 @@ If system `node` is **24** but dependencies were built for **22**, use one appro
 
 Do not document machine-specific paths in committed MCP configs. Use `npx bobman-mcp` in shared snippets; override locally only in untracked editor settings.
 
+### Cursor MCP in this repo (Windows)
+
+Committed configs use the **published** package (pinned version), not a local clone:
+
+```json
+"args": ["-y", "bobman-mcp@0.1.1"]
+```
+
+The npm bin (`scripts/bobman-mcp-bin.cjs`) prefers **Cursor’s bundled Node 22** on Windows when present, which avoids `better-sqlite3` ABI mismatches if Cursor MCP uses Node 24.
+
+Do **not** run `npm link` while testing MCP — it forces `npx` to use this clone’s `node_modules`. Run `npm unlink -g bobman-mcp` if you linked earlier.
+
+Reload Cursor MCP after changing config.
+
 ## MCP while developing
 
 Point MCP at the built CLI (example — adjust clone path):

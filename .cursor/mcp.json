@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "bobman": {
+      "command": "npx",
+      "args": ["-y", "bobman-mcp@0.1.1"]
+    }
+  }
+}

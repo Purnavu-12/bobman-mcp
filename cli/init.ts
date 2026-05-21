@@ -4,7 +4,9 @@ import { writeDefaultConfig } from "../src/lib/config.js";
 import {
   hostConfigPaths,
   mergeJsonFile,
+  publishedNpxArgs,
   snippetForHost,
+  vscodeWorkspaceSnippet,
   type McpHostId,
 } from "../src/lib/mcp-snippets.js";
 
@@ -35,7 +37,7 @@ export function runInit(optsOrCwd: string | InitOptions = {}): void {
   out("Add to ~/.cursor/mcp.json:\n");
   out(`${snippets.cursor ?? snippetForHost("cursor").cursor}\n`);
   out("\nClaude Code:\n\n");
-  out("claude mcp add bobman npx -y bobman-mcp\n");
+  out(`claude mcp add bobman npx ${publishedNpxArgs().join(" ")}\n`);
   out("\nOther hosts: see docs/mcp-hosts.md\n\n");
 
   if (host === "all" || host !== "cursor") {
@@ -55,10 +57,16 @@ export function runInit(optsOrCwd: string | InitOptions = {}): void {
 
 function writeHostConfigs(cwd: string, snippets: Record<string, string>): void {
   const writers: Array<{ rel: string; fragment: Record<string, unknown> }> = [];
+  if (snippets.cursor) {
+    writers.push({
+      rel: ".cursor/mcp.json",
+      fragment: JSON.parse(snippets.cursor) as Record<string, unknown>,
+    });
+  }
   if (snippets.vscode) {
     writers.push({
       rel: ".vscode/mcp.json",
-      fragment: JSON.parse(snippets.vscode) as Record<string, unknown>,
+      fragment: JSON.parse(vscodeWorkspaceSnippet()) as Record<string, unknown>,
     });
   }
   if (snippets.opencode) {
@@ -79,7 +87,7 @@ function writeHostConfigs(cwd: string, snippets: Record<string, string>): void {
     fs.mkdirSync(path.dirname(full), { recursive: true });
     const content = mergeJsonFile(full, fragment);
     fs.writeFileSync(full, content + "\n", "utf8");
-    out(`Wrote MCP config: ${rel}\n`);
+    process.stdout.write(`Wrote MCP config: ${rel}\n`);
   }
 }
 

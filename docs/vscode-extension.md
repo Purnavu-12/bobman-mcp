@@ -6,8 +6,14 @@ Read-only sidebar for BobMan MCP. Agents still use **MCP** (`create_session`, `g
 
 ## Production install
 
+Install the VSIX in **VS Code** or **Cursor** only — not Visual Studio (Community/Professional). Double-clicking the `.vsix` on Windows may open the wrong `VSIXInstaller` and show:
+
+`One or more extensions are for Visual Studio Code. Try installing them in Visual Studio Code.`
+
+**VS Code / Cursor:** Command Palette → **Extensions: Install from VSIX…** → select `vscode-bobman-0.1.0.vsix` → Reload Window.
+
 1. Publish/consume **`bobman-mcp` via npm** in the project ([production.md](production.md)).
-2. Install the extension from **[GitHub Releases](https://github.com/Purnavu-12/bobman-mcp/releases)** (`vscode-bobman-0.1.0.vsix` or newer).
+2. Install the extension from **[GitHub Releases](https://github.com/Purnavu-12/bobman-mcp/releases)** (`vscode-bobman-0.1.0.vsix` or newer), or build: `cd extensions/vscode-bobman && npm run package`.
 3. Open the **workspace root** that contains `bobman.config.json`.
 4. **Defaults work** — no settings required:
 

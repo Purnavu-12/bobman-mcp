@@ -44,7 +44,7 @@ On **COMPLETE**, BobMan may auto-run sprint reflection. Use **add_knowledge** / 
 
 ## VS Code extension (human visibility)
 
-Install `vscode-bobman` from [GitHub Releases](https://github.com/Purnavu-12/bobman-mcp/releases). Defaults: `npx -y bobman-mcp start` with `--repo-path` aligned to Copilot MCP. See [docs/vscode-extension.md](docs/vscode-extension.md).
+Install `vscode-bobman` from [GitHub Releases](https://github.com/Purnavu-12/bobman-mcp/releases). Defaults: `npx -y bobman-mcp@0.1.1 start` with `--repo-path` aligned to Copilot MCP. See [docs/vscode-extension.md](docs/vscode-extension.md).
 
 ## Host setup
 

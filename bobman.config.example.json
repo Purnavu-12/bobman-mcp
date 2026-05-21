@@ -1,0 +1,10 @@
+{
+  "repoPath": ".",
+  "transport": "stdio",
+  "dbPath": null,
+  "maxAttempts": 3,
+  "logLevel": "info",
+  "strictFileScope": false,
+  "coveragePaths": ["coverage/coverage-final.json", "coverage/lcov.info"],
+  "testPassThreshold": 1
+}

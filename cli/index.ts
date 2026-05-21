@@ -1,20 +1,26 @@
 import { parseInitArgs, runInit } from "./init.js";
 import { runDoctor } from "./doctor.js";
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 function readPkgVersion(): string {
   try {
     const here =
-      typeof import.meta !== "undefined" && import.meta.url
-        ? path.dirname(fileURLToPath(import.meta.url))
-        : process.cwd();
-    const pkg = JSON.parse(readFileSync(path.join(here, "..", "package.json"), "utf8")) as {
-      version?: string;
-    };
-    return pkg.version ?? "0.1.0";
+      typeof __dirname !== "undefined"
+        ? __dirname
+        : typeof import.meta !== "undefined" && import.meta.url
+          ? path.dirname(fileURLToPath(import.meta.url))
+          : process.cwd();
+    for (const rel of ["../../package.json", "../package.json"]) {
+      const pkgPath = path.join(here, rel);
+      if (existsSync(pkgPath)) {
+        const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as { version?: string };
+        return pkg.version ?? "0.1.0";
+      }
+    }
+    return "0.1.0";
   } catch {
     return "0.1.0";
   }

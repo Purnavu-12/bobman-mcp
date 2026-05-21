@@ -5,6 +5,7 @@ const { execSync } = require("node:child_process");
 
 const MAX_BYTES = 5_000_000;
 const REQUIRED_FILES = [
+  "scripts/bobman-mcp-bin.cjs",
   "dist/cli/index.cjs",
   "dist/server.cjs",
   "docs/production.md",

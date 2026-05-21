@@ -159,6 +159,29 @@ function checkBobmanCliResolvable(): CheckResult {
   }
 }
 
+function checkNpmGlobalLink(): CheckResult {
+  try {
+    const out = execFileSync("npm", ["ls", "-g", "bobman-mcp", "--depth=0"], {
+      encoding: "utf8",
+      timeout: 10_000,
+    });
+    if (/bobman-mcp@.*->\s*(\.|\/|[A-Za-z]:)/.test(out.replace(/\r?\n/g, " "))) {
+      return {
+        name: "npm global link",
+        status: "FAIL",
+        hint: "run: npm unlink -g bobman-mcp (linked clone breaks npx/MCP native modules)",
+      };
+    }
+    return { name: "npm global link", status: "PASS", hint: "not linked to a local clone" };
+  } catch {
+    return {
+      name: "npm global link",
+      status: "PASS",
+      hint: "bobman-mcp not installed globally",
+    };
+  }
+}
+
 function checkConfigPresent(repoPath: string): CheckResult {
   const configPath = path.join(repoPath, "bobman.config.json");
   if (!fs.existsSync(configPath)) {
@@ -202,6 +225,7 @@ export function runChecks(deps: DoctorDeps = {}): CheckResult[] {
     checkDbDirectoryWritable(home),
     checkGitBinary(gitProbe),
     deps.checkBobmanCli?.() ?? checkBobmanCliResolvable(),
+    checkNpmGlobalLink(),
     checkConfigPresent(repoPath),
   ];
 }

@@ -1,17 +1,54 @@
 import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 export type McpHostId = "cursor" | "vscode" | "opencode" | "kiro" | "copilot-cli" | "all";
 
-const BOBMAN_ARGS = ["-y", "bobman-mcp"] as const;
 const BOBMAN_CMD = "npx";
+
+/** Pin the published package version so npx does not pick up a linked git clone. */
+export function publishedNpxArgs(version = readPackageVersion()): string[] {
+  return ["-y", `bobman-mcp@${version}`];
+}
+
+function readPackageVersion(): string {
+  try {
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const pkgPath = path.join(here, "..", "..", "package.json");
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8")) as { version?: string };
+    return pkg.version ?? "0.1.0";
+  } catch {
+    return "0.1.0";
+  }
+}
+
+function bobmanNpxEntry() {
+  return {
+    command: BOBMAN_CMD,
+    args: publishedNpxArgs(),
+  };
+}
 
 export function cursorSnippet(): string {
   return JSON.stringify(
     {
       mcpServers: {
+        bobman: bobmanNpxEntry(),
+      },
+    },
+    null,
+    2,
+  );
+}
+
+/** VS Code Copilot MCP shape (`servers`). */
+export function vscodeSnippet(): string {
+  return JSON.stringify(
+    {
+      servers: {
         bobman: {
-          command: BOBMAN_CMD,
-          args: [...BOBMAN_ARGS],
+          type: "stdio",
+          ...bobmanNpxEntry(),
         },
       },
     },
@@ -20,14 +57,17 @@ export function cursorSnippet(): string {
   );
 }
 
-export function vscodeSnippet(): string {
+/** Cursor + Copilot in one workspace file (no schema conflict in either editor). */
+export function vscodeWorkspaceSnippet(): string {
   return JSON.stringify(
     {
+      mcpServers: {
+        bobman: bobmanNpxEntry(),
+      },
       servers: {
         bobman: {
           type: "stdio",
-          command: BOBMAN_CMD,
-          args: [...BOBMAN_ARGS],
+          ...bobmanNpxEntry(),
         },
       },
     },
@@ -37,12 +77,13 @@ export function vscodeSnippet(): string {
 }
 
 export function opencodeSnippet(): string {
+  const args = publishedNpxArgs();
   return JSON.stringify(
     {
       mcp: {
         bobman: {
           type: "local",
-          command: [BOBMAN_CMD, ...BOBMAN_ARGS],
+          command: [BOBMAN_CMD, ...args],
           enabled: true,
         },
       },
@@ -57,8 +98,7 @@ export function kiroSnippet(): string {
     {
       mcpServers: {
         bobman: {
-          command: BOBMAN_CMD,
-          args: [...BOBMAN_ARGS],
+          ...bobmanNpxEntry(),
           disabled: false,
         },
       },
@@ -72,10 +112,7 @@ export function copilotCliSnippet(): string {
   return JSON.stringify(
     {
       mcpServers: {
-        bobman: {
-          command: BOBMAN_CMD,
-          args: [...BOBMAN_ARGS],
-        },
+        bobman: bobmanNpxEntry(),
       },
     },
     null,
@@ -88,7 +125,7 @@ export function snippetForHost(host: McpHostId): Record<string, string> {
     case "cursor":
       return { cursor: cursorSnippet() };
     case "vscode":
-      return { vscode: vscodeSnippet() };
+      return { vscode: vscodeWorkspaceSnippet() };
     case "opencode":
       return { opencode: opencodeSnippet() };
     case "kiro":
@@ -98,7 +135,7 @@ export function snippetForHost(host: McpHostId): Record<string, string> {
     case "all":
       return {
         cursor: cursorSnippet(),
-        vscode: vscodeSnippet(),
+        vscode: vscodeWorkspaceSnippet(),
         opencode: opencodeSnippet(),
         kiro: kiroSnippet(),
         "copilot-cli": copilotCliSnippet(),
@@ -110,7 +147,7 @@ export function snippetForHost(host: McpHostId): Record<string, string> {
 
 export function hostConfigPaths(): Record<string, string> {
   return {
-    cursor: "~/.cursor/mcp.json",
+    cursor: ".cursor/mcp.json (project) or ~/.cursor/mcp.json",
     vscode: ".vscode/mcp.json",
     opencode: "opencode.json",
     kiro: ".kiro/settings/mcp.json",

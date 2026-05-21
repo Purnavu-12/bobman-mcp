@@ -1,13 +1,14 @@
 {
   "name": "bobman-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Closed-loop engineering orchestrator MCP for Cursor and Claude Code",
   "type": "module",
   "main": "dist/server.cjs",
   "module": "dist/server.js",
   "types": "dist/server.d.ts",
   "bin": {
-    "bobman-mcp": "dist/cli/index.cjs"
+    "bobman-mcp": "scripts/bobman-mcp-bin.cjs",
+    "bobman": "scripts/bobman-mcp-bin.cjs"
   },
   "files": [
     "dist",

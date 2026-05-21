@@ -34,7 +34,7 @@ All hosts use the same command — **no absolute paths**:
 ```json
 {
   "command": "npx",
-  "args": ["-y", "bobman-mcp"]
+  "args": ["-y", "bobman-mcp@0.1.1"]
 }
 ```
 

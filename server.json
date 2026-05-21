@@ -5,6 +5,6 @@
   "license": "MIT",
   "homepage": "https://github.com/Purnavu-12/bobman-mcp",
   "installation": {
-    "npm": "npx -y bobman-mcp"
+    "npm": "npx -y bobman-mcp@0.1.1"
   }
 }

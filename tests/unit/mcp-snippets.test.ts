@@ -8,9 +8,10 @@ import {
 } from "../../src/lib/mcp-snippets.js";
 
 describe("mcp snippets", () => {
-  it("cursor snippet includes bobman-mcp", () => {
+  it("cursor snippet pins published bobman-mcp version", () => {
     const parsed = JSON.parse(cursorSnippet()) as { mcpServers: { bobman: { args: string[] } } };
-    expect(parsed.mcpServers.bobman.args).toContain("bobman-mcp");
+    expect(parsed.mcpServers.bobman.args[0]).toBe("-y");
+    expect(parsed.mcpServers.bobman.args[1]).toMatch(/^bobman-mcp@\d+\.\d+\.\d+$/);
   });
 
   it("vscode snippet uses stdio type", () => {
