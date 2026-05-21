@@ -57,9 +57,17 @@ jobs:
       - run: node scripts/check-pack.cjs
 
       - name: Publish to npm
+        id: npm_publish
+        continue-on-error: true
         run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Note when npm version already exists
+        if: steps.npm_publish.outcome == 'failure'
+        run: |
+          echo "npm publish skipped or failed (often because this version is already on the registry)."
+          echo "Continuing to build VSIX and create the GitHub Release."
 
       - name: Build VS Code extension VSIX
         working-directory: extensions/vscode-bobman
